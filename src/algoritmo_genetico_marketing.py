@@ -591,20 +591,21 @@ def montar_plano_detalhado(alocacao: Sequence[int], canais: pd.DataFrame) -> pd.
     receitas = calcular_receitas_por_canal(alocacao, canais)
     linhas = []
 
-    for investimento, receita, canal in zip(alocacao, receitas, canais.itertuples(index=False)):
-        linhas.append(
-            {
-                'id': canal.id,
-                'canal': canal.canal,
-                'categoria': canal.categoria,
-                'funil': canal.funil,
-                'investimento_mil': investimento,
-                'receita_estimada_mil': receita,
-                'lucro_bruto_mil': receita - investimento,
-                'risco_ponderado_mil': investimento * canal.risco,
-            }
+    linhas.extend(
+        {
+            'id': canal.id,
+            'canal': canal.canal,
+            'categoria': canal.categoria,
+            'funil': canal.funil,
+            'investimento_mil': investimento,
+            'receita_estimada_mil': receita,
+            'lucro_bruto_mil': receita - investimento,
+            'risco_ponderado_mil': investimento * canal.risco,
+        }
+        for investimento, receita, canal in zip(
+            alocacao, receitas, canais.itertuples(index=False)
         )
-
+    )
     return (
         pd.DataFrame(linhas)
         .sort_values('investimento_mil', ascending=False)
