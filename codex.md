@@ -234,6 +234,51 @@ O script gera:
 
 A pasta `outputs/` fica ignorada pelo Git porque contem artefatos gerados.
 
+## Interface interativa
+
+Foi adicionada uma interface web estatica em `interface/index.html`.
+
+A interface permite alterar os principais parametros do problema diretamente no
+navegador:
+
+- orcamento total;
+- tamanho da populacao;
+- quantidade de geracoes;
+- descendentes por geracao;
+- taxa de crossover;
+- taxa de mutacao;
+- peso do risco;
+- semente aleatoria;
+- minimo, maximo, receita, saturacao e risco de cada canal.
+
+Ela tambem permite adicionar canais, restaurar a base original, calcular o plano
+recomendado, gerar graficos e exportar o resultado em CSV.
+
+Estrutura:
+
+```text
+interface/
+├── index.html
+└── assets/
+    ├── css/
+    │   └── app.css
+    └── js/
+        ├── app.js
+        └── plotly.min.js
+```
+
+`index.html` contem a estrutura da tela. `app.css` contem o layout e a aparencia.
+`app.js` contem a logica interativa, incluindo leitura dos inputs, validacao,
+execucao do algoritmo genetico em JavaScript, renderizacao dos resultados,
+chamada dos graficos Plotly e exportacao de CSV.
+
+Fato: a interface roda sem servidor, abrindo o arquivo HTML no navegador.
+
+Opiniao tecnica: para apresentacao didatica, essa decisao reduz atrito e melhora
+a experiencia, porque qualquer pessoa consegue testar cenarios rapidamente. Para
+producao, a melhor arquitetura seria expor o motor Python por uma API e fazer a
+interface consumir essa API, evitando manter duas implementacoes do mesmo modelo.
+
 ## Saidas
 
 `plano_marketing_otimizado.csv` mostra o plano recomendado com investimento,
@@ -246,6 +291,33 @@ conservadoras.
 `alocacao_orcamento.html` mostra a distribuicao do orcamento recomendado.
 
 `resumo_execucao.txt` traz parametros, metricas agregadas e o plano final.
+
+### Estrutura dos relatorios HTML
+
+Os relatorios HTML foram ajustados para separar estrutura, estilo e
+comportamento:
+
+```text
+outputs/
+├── assets/
+│   ├── css/
+│   │   └── relatorios.css
+│   └── js/
+│       ├── plotly.min.js
+│       ├── fronteira_pareto.js
+│       └── alocacao_orcamento.js
+├── fronteira_pareto.html
+└── alocacao_orcamento.html
+```
+
+`fronteira_pareto.html` e `alocacao_orcamento.html` ficam responsaveis apenas
+pela estrutura da pagina. O visual comum fica em `relatorios.css`. A biblioteca
+Plotly fica em `plotly.min.js`, e cada grafico recebe um arquivo JavaScript
+proprio com os dados e a chamada de renderizacao.
+
+Essa separacao melhora manutencao, reduz acoplamento entre layout e logica de
+grafico e evita relatorios com HTML monolitico gerado diretamente por
+`figura.write_html`.
 
 ## Testes
 
@@ -339,3 +411,27 @@ Essa mudanca nao alterou a implementacao Python nem os dados de entrada. O foco
 foi tornar o projeto mais claro para apresentacao, avaliacao academica e leitura
 por pessoas que querem entender o problema de negocio antes dos detalhes de
 codigo.
+
+## Atualizacao de relatorios em 11_06_2026
+
+Os relatorios interativos deixaram de ser gerados como HTML monolitico do Plotly.
+Agora a funcao de exportacao cria:
+
+- HTML estrutural para cada relatorio;
+- CSS compartilhado em `outputs/assets/css/relatorios.css`;
+- biblioteca Plotly local em `outputs/assets/js/plotly.min.js`;
+- JavaScript especifico por grafico em `outputs/assets/js/`.
+
+Tambem foi adicionado teste automatizado para garantir que os HTMLs apontam para
+CSS e JS externos e que os arquivos de assets sao criados corretamente.
+
+## Atualizacao de interface em 11_06_2026
+
+Foi criada uma interface web estatica para exploracao interativa do problema. A
+tela permite editar valores dos canais e parametros do algoritmo, executar o
+calculo pelo botao `Calcular`, gerar graficos pelo botao `Gerar graficos` e
+exportar um CSV com o plano recomendado.
+
+A interface usa `plotly.min.js` local, copiado para `interface/assets/js/`, para
+evitar depender de internet durante apresentacoes. Essa escolha aumenta um pouco
+o tamanho do projeto, mas reduz risco de falha por indisponibilidade de rede.

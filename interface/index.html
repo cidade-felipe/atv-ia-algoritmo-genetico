@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Otimizador de mix de marketing</title>
+    <link rel="stylesheet" href="assets/css/app.css">
+    <script defer src="assets/js/plotly.min.js"></script>
+    <script defer src="assets/js/app.js"></script>
+</head>
+<body>
+    <main class="app-shell">
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">Algoritmo genetico</p>
+                <h1>Otimizador de mix de marketing</h1>
+            </div>
+            <div class="toolbar" aria-label="Acoes principais">
+                <button class="button primary" id="calculateButton" type="button">Calcular</button>
+                <button class="button" id="chartsButton" type="button">Gerar graficos</button>
+                <button class="button" id="exportButton" type="button">Exportar CSV</button>
+            </div>
+        </header>
+
+        <section class="metrics-strip" aria-label="Resumo do resultado">
+            <article class="metric">
+                <span>Receita</span>
+                <strong id="metricRevenue">R$ 0 mil</strong>
+            </article>
+            <article class="metric">
+                <span>Lucro</span>
+                <strong id="metricProfit">R$ 0 mil</strong>
+            </article>
+            <article class="metric">
+                <span>Risco</span>
+                <strong id="metricRisk">R$ 0 mil</strong>
+            </article>
+            <article class="metric">
+                <span>Sinergia</span>
+                <strong id="metricSynergy">R$ 0 mil</strong>
+            </article>
+        </section>
+
+        <section class="workspace">
+            <aside class="panel controls-panel" aria-label="Parametros do algoritmo">
+                <div class="panel-header">
+                    <h2>Parametros</h2>
+                    <button class="button compact" id="resetButton" type="button">Restaurar</button>
+                </div>
+
+                <div class="control-grid">
+                    <label>
+                        <span>Orcamento (R$ mil)</span>
+                        <input id="budgetInput" type="number" min="1" step="1" value="100">
+                    </label>
+                    <label>
+                        <span>Populacao</span>
+                        <input id="populationInput" type="number" min="20" step="10" value="140">
+                    </label>
+                    <label>
+                        <span>Geracoes</span>
+                        <input id="generationsInput" type="number" min="5" step="5" value="110">
+                    </label>
+                    <label>
+                        <span>Descendentes</span>
+                        <input id="offspringInput" type="number" min="20" step="10" value="140">
+                    </label>
+                    <label>
+                        <span>Crossover</span>
+                        <input id="crossoverInput" type="number" min="0" max="1" step="0.01" value="0.68">
+                    </label>
+                    <label>
+                        <span>Mutacao</span>
+                        <input id="mutationInput" type="number" min="0" max="1" step="0.01" value="0.32">
+                    </label>
+                    <label>
+                        <span>Peso do risco</span>
+                        <input id="riskWeightInput" type="number" min="0" step="0.05" value="0.55">
+                    </label>
+                    <label>
+                        <span>Semente</span>
+                        <input id="seedInput" type="number" step="1" value="42">
+                    </label>
+                </div>
+
+                <div class="status-box" id="statusBox" role="status">
+                    Aguardando calculo.
+                </div>
+            </aside>
+
+            <section class="panel channels-panel" aria-label="Canais de marketing">
+                <div class="panel-header">
+                    <h2>Canais</h2>
+                    <button class="button compact" id="addChannelButton" type="button">Adicionar canal</button>
+                </div>
+                <div class="table-wrap">
+                    <table class="channels-table">
+                        <thead>
+                            <tr>
+                                <th>Canal</th>
+                                <th>Funil</th>
+                                <th>Min</th>
+                                <th>Max</th>
+                                <th>Receita</th>
+                                <th>Saturacao</th>
+                                <th>Risco</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="channelsBody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </section>
+
+        <section class="results-grid">
+            <article class="panel">
+                <div class="panel-header">
+                    <h2>Plano recomendado</h2>
+                    <span class="pill" id="scorePill">Score 0</span>
+                </div>
+                <div class="table-wrap result-wrap">
+                    <table class="result-table">
+                        <thead>
+                            <tr>
+                                <th>Canal</th>
+                                <th>Investimento</th>
+                                <th>Receita</th>
+                                <th>Lucro bruto</th>
+                                <th>Risco</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultBody"></tbody>
+                    </table>
+                </div>
+            </article>
+
+            <article class="panel">
+                <div class="panel-header">
+                    <h2>Graficos</h2>
+                    <span class="pill" id="frontierPill">Fronteira vazia</span>
+                </div>
+                <div class="chart-grid">
+                    <div class="chart-box" id="allocationChart"></div>
+                    <div class="chart-box" id="frontierChart"></div>
+                    <div class="chart-box chart-wide" id="convergenceChart"></div>
+                </div>
+            </article>
+        </section>
+    </main>
+</body>
+</html>

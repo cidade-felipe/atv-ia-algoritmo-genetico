@@ -9,6 +9,8 @@ from src.algoritmo_genetico_marketing import (
     carregar_canais,
     criar_alocacao_referencia,
     executar_algoritmo_genetico,
+    gerar_grafico_alocacao,
+    gerar_grafico_fronteira,
     reparar_alocacao,
     validar_canais,
 )
@@ -100,3 +102,36 @@ def test_plano_otimizado_supera_referencia_distribuida() -> None:
     lucro_referencia, _ = avaliar_individuo(referencia, canais)
 
     assert resultado.metricas.lucro_estimado_mil > lucro_referencia
+
+
+def test_relatorios_html_usam_css_e_js_separados(tmp_path) -> None:
+    canais = carregar_canais(CAMINHO_DADOS)
+    config = ConfigMarketingAG(
+        tamanho_populacao=40,
+        geracoes=12,
+        descendentes_por_geracao=40,
+        semente=31,
+    )
+    resultado = executar_algoritmo_genetico(canais, config)
+
+    caminho_fronteira = gerar_grafico_fronteira(
+        resultado,
+        tmp_path / 'fronteira_pareto.html',
+    )
+    caminho_alocacao = gerar_grafico_alocacao(
+        resultado,
+        tmp_path / 'alocacao_orcamento.html',
+    )
+
+    html_fronteira = caminho_fronteira.read_text(encoding='utf-8')
+    html_alocacao = caminho_alocacao.read_text(encoding='utf-8')
+
+    assert 'assets/css/relatorios.css' in html_fronteira
+    assert 'assets/js/plotly.min.js' in html_fronteira
+    assert 'assets/js/fronteira_pareto.js' in html_fronteira
+    assert 'assets/js/alocacao_orcamento.js' in html_alocacao
+    assert '<script type="text/javascript">' not in html_fronteira
+    assert (tmp_path / 'assets' / 'css' / 'relatorios.css').exists()
+    assert (tmp_path / 'assets' / 'js' / 'plotly.min.js').exists()
+    assert (tmp_path / 'assets' / 'js' / 'fronteira_pareto.js').exists()
+    assert (tmp_path / 'assets' / 'js' / 'alocacao_orcamento.js').exists()

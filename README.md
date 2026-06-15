@@ -187,6 +187,73 @@ O script gera arquivos na pasta `outputs/`:
 - `alocacao_orcamento.html`, distribuicao do orcamento recomendado;
 - `resumo_execucao.txt`, resumo textual da execucao.
 
+Os relatorios HTML usam arquivos separados de CSS e JavaScript:
+
+```text
+outputs/
+├── assets/
+│   ├── css/
+│   │   └── relatorios.css
+│   └── js/
+│       ├── plotly.min.js
+│       ├── fronteira_pareto.js
+│       └── alocacao_orcamento.js
+├── fronteira_pareto.html
+└── alocacao_orcamento.html
+```
+
+Essa separacao deixa os relatorios mais organizados, facilita manutencao visual e
+evita HTML gigante com codigo JavaScript embutido.
+
+## Interface interativa
+
+Tambem existe uma interface web estatica em:
+
+```text
+interface/index.html
+```
+
+Ela permite editar:
+
+- orcamento total;
+- tamanho da populacao;
+- numero de geracoes;
+- descendentes por geracao;
+- taxa de crossover;
+- taxa de mutacao;
+- peso do risco;
+- semente aleatoria;
+- minimo, maximo, retorno, saturacao e risco de cada canal.
+
+A tela possui botoes para:
+
+- calcular o plano recomendado;
+- gerar graficos interativos;
+- adicionar novos canais;
+- restaurar os valores originais;
+- exportar o plano otimizado em CSV.
+
+A interface usa HTML, CSS e JavaScript separados:
+
+```text
+interface/
+├── index.html
+└── assets/
+    ├── css/
+    │   └── app.css
+    └── js/
+        ├── app.js
+        └── plotly.min.js
+```
+
+Fato: a interface roda no navegador, sem servidor. Ela usa uma implementacao em
+JavaScript da mesma logica de negocio do exemplo, para que os resultados aparecam
+na tela assim que o usuario calcula.
+
+Opiniao tecnica: manter essa interface estatica reduz custo de implementacao e
+facilita apresentacao em aula, porque basta abrir o HTML. Para producao, uma API
+Python compartilhando exatamente o mesmo motor de otimizacao seria mais adequada.
+
 ## Rodando os testes
 
 ```powershell
