@@ -358,6 +358,9 @@ def calcular_sinergia(
     sinergia_total = 0.0
 
     for (canal_a, canal_b), percentual in SINERGIAS.items():
+        if canal_a not in indice_por_id or canal_b not in indice_por_id:
+            continue
+
         indice_a = indice_por_id[canal_a]
         indice_b = indice_por_id[canal_b]
         if alocacao[indice_a] > 0 and alocacao[indice_b] > 0:

@@ -145,16 +145,27 @@ Impacto pratico: essa visualizacao ajuda uma pessoa de negocio a escolher uma es
 │       └── AlgoritmoGenetico.pdf
 ├── src/
 │   ├── __init__.py
+│   ├── api.py
 │   └── algoritmo_genetico_marketing.py
 ├── tests/
+│   ├── test_api.py
 │   └── test_algoritmo_genetico_marketing.py
+├── interface/
+│   ├── index.html
+│   └── assets/
+│       ├── css/
+│       │   └── app.css
+│       └── js/
+│           ├── app.js
+│           └── plotly.min.js
+├── streamlit_app.py
 ├── pytest.ini
 ├── requirements.txt
 ├── README.md
 └── codex.md
 ```
 
-## Como rodar
+## Como rodar com backend Python
 
 Crie o ambiente virtual na raiz do projeto:
 
@@ -174,7 +185,57 @@ Instale as dependencias:
 python -m pip install -r requirements.txt
 ```
 
-Execute o exemplo:
+Suba o backend:
+
+```powershell
+python -m uvicorn src.api:app --reload
+```
+
+Abra a interface no navegador:
+
+```text
+http://127.0.0.1:8000
+```
+
+A interface envia os valores preenchidos para o endpoint:
+
+```text
+POST /api/otimizar
+```
+
+Fato: o cálculo da interface agora roda no backend Python, usando o motor de
+otimização com `DEAP`. O JavaScript ficou responsável por coletar os dados da
+tela, chamar a API e renderizar tabelas e gráficos.
+
+Opinião técnica: essa arquitetura é melhor do que calcular tudo no navegador,
+porque evita duplicar a regra do algoritmo em JavaScript e Python. Também fica
+mais próxima de um sistema real, no qual a lógica crítica fica centralizada no
+backend.
+
+## Como rodar com Streamlit
+
+Também existe uma interface em Streamlit:
+
+```powershell
+streamlit run streamlit_app.py
+```
+
+Ela permite editar a tabela de canais, ajustar os parâmetros do algoritmo,
+calcular o plano recomendado, visualizar métricas, gerar gráficos interativos e
+baixar o plano em CSV.
+
+Fato: o Streamlit usa diretamente o motor Python em
+`src/algoritmo_genetico_marketing.py`.
+
+Opinião técnica: para exploração, apresentação em aula e prototipagem, o
+Streamlit é a opção mais simples. Ele reduz a quantidade de código de interface e
+evita manter a mesma regra de negócio em JavaScript. Para uma aplicação web mais
+customizada, a versão FastAPI + HTML/CSS/JS continua sendo mais flexível.
+
+## Como rodar o script de relatórios
+
+Além da interface com backend, ainda é possível executar o script que gera
+relatórios estáticos:
 
 ```powershell
 python src\algoritmo_genetico_marketing.py
@@ -246,13 +307,12 @@ interface/
         └── plotly.min.js
 ```
 
-Fato: a interface roda no navegador, sem servidor. Ela usa uma implementacao em
-JavaScript da mesma logica de negocio do exemplo, para que os resultados aparecam
-na tela assim que o usuario calcula.
+Fato: a interface depende do backend Python para calcular. Se ela for aberta
+diretamente pelo arquivo `interface/index.html`, tentará chamar
+`http://127.0.0.1:8000/api/otimizar`.
 
-Opiniao tecnica: manter essa interface estatica reduz custo de implementacao e
-facilita apresentacao em aula, porque basta abrir o HTML. Para producao, uma API
-Python compartilhando exatamente o mesmo motor de otimizacao seria mais adequada.
+Opinião técnica: servir a interface pelo próprio FastAPI é o caminho mais simples
+para evitar problema de caminho, CORS e diferença entre ambientes.
 
 ## Rodando os testes
 

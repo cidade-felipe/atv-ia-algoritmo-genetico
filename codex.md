@@ -193,9 +193,20 @@ funcionando corretamente.
 │       └── AlgoritmoGenetico.pdf
 ├── src/
 │   ├── __init__.py
+│   ├── api.py
 │   └── algoritmo_genetico_marketing.py
 ├── tests/
+│   ├── test_api.py
 │   └── test_algoritmo_genetico_marketing.py
+├── interface/
+│   ├── index.html
+│   └── assets/
+│       ├── css/
+│       │   └── app.css
+│       └── js/
+│           ├── app.js
+│           └── plotly.min.js
+├── streamlit_app.py
 ├── pytest.ini
 ├── requirements.txt
 ├── README.md
@@ -272,12 +283,67 @@ interface/
 execucao do algoritmo genetico em JavaScript, renderizacao dos resultados,
 chamada dos graficos Plotly e exportacao de CSV.
 
-Fato: a interface roda sem servidor, abrindo o arquivo HTML no navegador.
+Fato: a interface agora consome o backend Python em `POST /api/otimizar`.
 
-Opiniao tecnica: para apresentacao didatica, essa decisao reduz atrito e melhora
-a experiencia, porque qualquer pessoa consegue testar cenarios rapidamente. Para
-producao, a melhor arquitetura seria expor o motor Python por uma API e fazer a
-interface consumir essa API, evitando manter duas implementacoes do mesmo modelo.
+Opiniao tecnica: essa arquitetura e mais sustentavel do que manter o algoritmo
+replicado em JavaScript, porque centraliza a regra de otimizacao no Python e
+deixa o front-end responsavel por coleta de dados, exibicao de resultados e
+graficos.
+
+## Backend Python
+
+Foi criado o arquivo `src/api.py` com uma API FastAPI.
+
+Endpoints:
+
+- `GET /`: serve `interface/index.html`.
+- `GET /api/health`: retorna status simples da API.
+- `POST /api/otimizar`: recebe canais e parametros, executa o algoritmo genetico
+  com `DEAP` e devolve metricas, plano recomendado, fronteira de Pareto e
+  historico de evolucao.
+
+Para subir o servidor:
+
+```powershell
+python -m uvicorn src.api:app --reload
+```
+
+Depois, a interface fica disponivel em:
+
+```text
+http://127.0.0.1:8000
+```
+
+O backend tambem serve os assets da interface em `/assets`, usando os arquivos em
+`interface/assets/`.
+
+## Interface Streamlit
+
+Foi criado o arquivo `streamlit_app.py` como alternativa de interface em Python.
+
+Para executar:
+
+```powershell
+streamlit run streamlit_app.py
+```
+
+A interface Streamlit permite:
+
+- editar a tabela de canais com `st.data_editor`;
+- alterar parametros do algoritmo na barra lateral;
+- executar o algoritmo genetico com o motor Python existente;
+- visualizar metricas de receita, lucro, risco e sinergia;
+- ver a tabela do plano recomendado;
+- gerar graficos de alocacao, fronteira de Pareto e convergencia;
+- baixar o plano final em CSV.
+
+Fato: diferente da interface HTML/JS, o Streamlit chama diretamente
+`executar_algoritmo_genetico`, sem passar pela API FastAPI.
+
+Opiniao tecnica: o Streamlit e a opcao mais rapida para prototipagem e
+apresentacao, porque reduz a quantidade de codigo de front-end. A interface
+FastAPI + HTML/CSS/JS segue sendo mais flexivel quando o objetivo e simular uma
+aplicacao web mais customizada.
 
 ## Saidas
 
@@ -435,6 +501,32 @@ exportar um CSV com o plano recomendado.
 A interface usa `plotly.min.js` local, copiado para `interface/assets/js/`, para
 evitar depender de internet durante apresentacoes. Essa escolha aumenta um pouco
 o tamanho do projeto, mas reduz risco de falha por indisponibilidade de rede.
+
+## Atualizacao de backend em 15_06_2026
+
+Foi criado um backend Python com FastAPI para executar a otimizacao usada pela
+interface. A versao anterior calculava no navegador com JavaScript. A nova versao
+envia os dados da tela para `POST /api/otimizar`, executa o motor Python em
+`src/algoritmo_genetico_marketing.py` e retorna JSON com:
+
+- metricas consolidadas;
+- plano recomendado por canal;
+- alocacao final;
+- fronteira de Pareto;
+- historico das geracoes.
+
+Tambem foram adicionadas dependencias `fastapi`, `uvicorn` e `httpx`, alem de
+testes automatizados para `GET /api/health`, sucesso em `POST /api/otimizar` e
+rejeicao de orcamento inviavel.
+
+## Atualizacao Streamlit em 15_06_2026
+
+Foi adicionada uma interface alternativa em Streamlit no arquivo
+`streamlit_app.py`. Essa versao usa diretamente o motor Python do algoritmo
+genetico, sem duplicar a regra no navegador e sem exigir chamadas HTTP.
+
+A dependencia `streamlit` foi adicionada ao `requirements.txt` e instalada no
+ambiente virtual `venv`.
 
 ## Atualizacao gramatical da interface em 15_06_2026
 
