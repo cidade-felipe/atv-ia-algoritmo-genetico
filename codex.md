@@ -435,3 +435,19 @@ exportar um CSV com o plano recomendado.
 A interface usa `plotly.min.js` local, copiado para `interface/assets/js/`, para
 evitar depender de internet durante apresentacoes. Essa escolha aumenta um pouco
 o tamanho do projeto, mas reduz risco de falha por indisponibilidade de rede.
+
+## Atualizacao gramatical da interface em 15_06_2026
+
+Os textos visiveis da interface foram revisados para corrigir acentuacao,
+grafia e pequenas escolhas de escrita em portugues do Brasil. A revisao incluiu:
+
+- rotulos e botoes do HTML;
+- nomes iniciais dos canais;
+- opcoes de funil;
+- mensagens de validacao;
+- mensagens de status;
+- titulos e eixos dos graficos Plotly.
+
+Essa mudanca nao alterou a logica do algoritmo, os parametros numericos nem os
+dados usados no calculo. O objetivo foi melhorar apresentacao, clareza e
+qualidade visual da interface.

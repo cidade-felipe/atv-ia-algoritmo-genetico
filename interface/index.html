@@ -12,12 +12,12 @@
     <main class="app-shell">
         <header class="topbar">
             <div>
-                <p class="eyebrow">Algoritmo genetico</p>
+                <p class="eyebrow">Algoritmo genético</p>
                 <h1>Otimizador de mix de marketing</h1>
             </div>
-            <div class="toolbar" aria-label="Acoes principais">
+            <div class="toolbar" aria-label="Ações principais">
                 <button class="button primary" id="calculateButton" type="button">Calcular</button>
-                <button class="button" id="chartsButton" type="button">Gerar graficos</button>
+                <button class="button" id="chartsButton" type="button">Gerar gráficos</button>
                 <button class="button" id="exportButton" type="button">Exportar CSV</button>
             </div>
         </header>
@@ -42,23 +42,23 @@
         </section>
 
         <section class="workspace">
-            <aside class="panel controls-panel" aria-label="Parametros do algoritmo">
+            <aside class="panel controls-panel" aria-label="Parâmetros do algoritmo">
                 <div class="panel-header">
-                    <h2>Parametros</h2>
+                    <h2>Parâmetros</h2>
                     <button class="button compact" id="resetButton" type="button">Restaurar</button>
                 </div>
 
                 <div class="control-grid">
                     <label>
-                        <span>Orcamento (R$ mil)</span>
+                        <span>Orçamento (R$ mil)</span>
                         <input id="budgetInput" type="number" min="1" step="1" value="100">
                     </label>
                     <label>
-                        <span>Populacao</span>
+                        <span>População</span>
                         <input id="populationInput" type="number" min="20" step="10" value="140">
                     </label>
                     <label>
-                        <span>Geracoes</span>
+                        <span>Gerações</span>
                         <input id="generationsInput" type="number" min="5" step="5" value="110">
                     </label>
                     <label>
@@ -70,7 +70,7 @@
                         <input id="crossoverInput" type="number" min="0" max="1" step="0.01" value="0.68">
                     </label>
                     <label>
-                        <span>Mutacao</span>
+                        <span>Mutação</span>
                         <input id="mutationInput" type="number" min="0" max="1" step="0.01" value="0.32">
                     </label>
                     <label>
@@ -84,7 +84,7 @@
                 </div>
 
                 <div class="status-box" id="statusBox" role="status">
-                    Aguardando calculo.
+                    Aguardando cálculo.
                 </div>
             </aside>
 
@@ -99,10 +99,10 @@
                             <tr>
                                 <th>Canal</th>
                                 <th>Funil</th>
-                                <th>Min</th>
-                                <th>Max</th>
+                                <th>Mín.</th>
+                                <th>Máx.</th>
                                 <th>Receita</th>
-                                <th>Saturacao</th>
+                                <th>Saturação</th>
                                 <th>Risco</th>
                                 <th></th>
                             </tr>
@@ -137,7 +137,7 @@
 
             <article class="panel">
                 <div class="panel-header">
-                    <h2>Graficos</h2>
+                    <h2>Gráficos</h2>
                     <span class="pill" id="frontierPill">Fronteira vazia</span>
                 </div>
                 <div class="chart-grid">

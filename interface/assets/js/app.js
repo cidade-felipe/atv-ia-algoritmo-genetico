@@ -1,16 +1,16 @@
 const INITIAL_CHANNELS = [
-    { id: 'SEARCH', canal: 'Search Ads', funil: 'conversao', min: 6, max: 26, receita: 3.20, saturacao: 0.46, risco: 0.34 },
-    { id: 'RETARGET', canal: 'Retargeting', funil: 'conversao', min: 4, max: 18, receita: 3.65, saturacao: 0.55, risco: 0.28 },
-    { id: 'CRM', canal: 'CRM e email', funil: 'retencao', min: 3, max: 16, receita: 4.10, saturacao: 0.38, risco: 0.16 },
-    { id: 'SEO', canal: 'Conteudo SEO', funil: 'aquisicao', min: 5, max: 24, receita: 2.55, saturacao: 0.22, risco: 0.18 },
-    { id: 'INFLU_MICRO', canal: 'Influenciadores micro', funil: 'aquisicao', min: 2, max: 14, receita: 2.85, saturacao: 0.48, risco: 0.45 },
-    { id: 'TIKTOK', canal: 'TikTok Ads', funil: 'aquisicao', min: 3, max: 20, receita: 3.05, saturacao: 0.62, risco: 0.52 },
-    { id: 'LINKEDIN', canal: 'LinkedIn Ads', funil: 'aquisicao', min: 2, max: 15, receita: 2.70, saturacao: 0.42, risco: 0.40 },
-    { id: 'REFERRAL', canal: 'Programa de indicacao', funil: 'retencao', min: 4, max: 17, receita: 3.75, saturacao: 0.30, risco: 0.20 },
-    { id: 'YOUTUBE', canal: 'YouTube Shorts', funil: 'aquisicao', min: 2, max: 16, receita: 2.60, saturacao: 0.50, risco: 0.39 },
-    { id: 'MARKETPLACE', canal: 'Promocoes marketplace', funil: 'conversao', min: 5, max: 22, receita: 3.35, saturacao: 0.58, risco: 0.36 },
-    { id: 'WEBINAR', canal: 'Webinars B2B', funil: 'nutricao', min: 1, max: 12, receita: 3.15, saturacao: 0.34, risco: 0.27 },
-    { id: 'CRO', canal: 'Otimizacao de conversao', funil: 'conversao', min: 4, max: 18, receita: 4.35, saturacao: 0.24, risco: 0.14 },
+    { id: 'SEARCH', canal: 'Search Ads', funil: 'conversão', min: 6, max: 26, receita: 3.20, saturacao: 0.46, risco: 0.34 },
+    { id: 'RETARGET', canal: 'Retargeting', funil: 'conversão', min: 4, max: 18, receita: 3.65, saturacao: 0.55, risco: 0.28 },
+    { id: 'CRM', canal: 'CRM e e-mail', funil: 'retenção', min: 3, max: 16, receita: 4.10, saturacao: 0.38, risco: 0.16 },
+    { id: 'SEO', canal: 'Conteúdo SEO', funil: 'aquisição', min: 5, max: 24, receita: 2.55, saturacao: 0.22, risco: 0.18 },
+    { id: 'INFLU_MICRO', canal: 'Influenciadores micro', funil: 'aquisição', min: 2, max: 14, receita: 2.85, saturacao: 0.48, risco: 0.45 },
+    { id: 'TIKTOK', canal: 'TikTok Ads', funil: 'aquisição', min: 3, max: 20, receita: 3.05, saturacao: 0.62, risco: 0.52 },
+    { id: 'LINKEDIN', canal: 'LinkedIn Ads', funil: 'aquisição', min: 2, max: 15, receita: 2.70, saturacao: 0.42, risco: 0.40 },
+    { id: 'REFERRAL', canal: 'Programa de indicação', funil: 'retenção', min: 4, max: 17, receita: 3.75, saturacao: 0.30, risco: 0.20 },
+    { id: 'YOUTUBE', canal: 'YouTube Shorts', funil: 'aquisição', min: 2, max: 16, receita: 2.60, saturacao: 0.50, risco: 0.39 },
+    { id: 'MARKETPLACE', canal: 'Promoções marketplace', funil: 'conversão', min: 5, max: 22, receita: 3.35, saturacao: 0.58, risco: 0.36 },
+    { id: 'WEBINAR', canal: 'Webinars B2B', funil: 'nutrição', min: 1, max: 12, receita: 3.15, saturacao: 0.34, risco: 0.27 },
+    { id: 'CRO', canal: 'Otimização de conversão', funil: 'conversão', min: 4, max: 18, receita: 4.35, saturacao: 0.24, risco: 0.14 },
 ];
 
 const SYNERGIES = new Map([
@@ -22,7 +22,7 @@ const SYNERGIES = new Map([
     ['MARKETPLACE|SEARCH', 0.05],
 ]);
 
-const FUNNEL_OPTIONS = ['aquisicao', 'conversao', 'nutricao', 'retencao'];
+const FUNNEL_OPTIONS = ['aquisição', 'conversão', 'nutrição', 'retenção'];
 
 const state = {
     channels: structuredClone(INITIAL_CHANNELS),
@@ -125,7 +125,7 @@ function readConfig() {
 
 function validateInputs(channels, config) {
     if (!Number.isFinite(config.budget) || config.budget <= 0) {
-        throw new Error('Orcamento precisa ser maior que zero.');
+        throw new Error('Orçamento precisa ser maior que zero.');
     }
 
     if (channels.length < 2) {
@@ -133,28 +133,28 @@ function validateInputs(channels, config) {
     }
 
     if (config.population < 20 || config.generations < 5 || config.offspring < 20) {
-        throw new Error('Populacao, geracoes e descendentes estao baixos demais.');
+        throw new Error('População, gerações e descendentes estão baixos demais.');
     }
 
     if (config.crossover < 0 || config.crossover > 1 || config.mutation < 0 || config.mutation > 1) {
-        throw new Error('Crossover e mutacao precisam estar entre 0 e 1.');
+        throw new Error('Crossover e mutação precisam estar entre 0 e 1.');
     }
 
     channels.forEach((channel, index) => {
         if (!channel.canal) {
-            throw new Error(`Canal ${index + 1} esta sem nome.`);
+            throw new Error(`Canal ${index + 1} está sem nome.`);
         }
 
         if (!Number.isFinite(channel.min) || !Number.isFinite(channel.max) || channel.min < 0 || channel.max < channel.min) {
-            throw new Error(`Limites invalidos em ${channel.canal}.`);
+            throw new Error(`Limites inválidos em ${channel.canal}.`);
         }
 
         if (!Number.isFinite(channel.receita) || channel.receita <= 0) {
-            throw new Error(`Receita invalida em ${channel.canal}.`);
+            throw new Error(`Receita inválida em ${channel.canal}.`);
         }
 
         if (channel.saturacao < 0 || channel.saturacao > 1 || channel.risco < 0 || channel.risco > 1) {
-            throw new Error(`Saturacao e risco precisam ficar entre 0 e 1 em ${channel.canal}.`);
+            throw new Error(`Saturação e risco precisam ficar entre 0 e 1 em ${channel.canal}.`);
         }
     });
 
@@ -162,11 +162,11 @@ function validateInputs(channels, config) {
     const maximum = channels.reduce((total, channel) => total + Math.round(channel.max), 0);
 
     if (config.budget < minimum) {
-        throw new Error(`Orcamento menor que o minimo viavel de R$ ${minimum} mil.`);
+        throw new Error(`Orçamento menor que o mínimo viável de R$ ${minimum} mil.`);
     }
 
     if (config.budget > maximum) {
-        throw new Error(`Orcamento maior que o maximo viavel de R$ ${maximum} mil.`);
+        throw new Error(`Orçamento maior que o máximo viável de R$ ${maximum} mil.`);
     }
 }
 
@@ -202,7 +202,7 @@ function repairAllocation(allocation, channels, budget, rng) {
     }
 
     if (repaired.reduce((total, value) => total + value, 0) !== Math.round(budget)) {
-        throw new Error('Nao foi possivel reparar a alocacao para o orcamento definido.');
+        throw new Error('Não foi possível reparar a alocação para o orçamento definido.');
     }
 
     return repaired;
@@ -436,7 +436,7 @@ function calculate() {
         state.lastResult = { ...result, channels: structuredClone(state.channels), config };
         renderMetrics(state.lastResult);
         renderPlan(state.lastResult, state.lastResult.channels);
-        setStatus('Calculo finalizado com sucesso.', 'success');
+        setStatus('Cálculo finalizado com sucesso.', 'success');
         return state.lastResult;
     } catch (error) {
         setStatus(error.message, 'error');
@@ -451,7 +451,7 @@ function renderCharts() {
     }
 
     if (!window.Plotly) {
-        setStatus('Plotly nao carregou. Verifique o arquivo assets/js/plotly.min.js.', 'error');
+        setStatus('Plotly não carregou. Verifique o arquivo assets/js/plotly.min.js.', 'error');
         return;
     }
 
@@ -467,7 +467,7 @@ function renderCharts() {
         },
         hovertemplate: '<b>%{y}</b><br>Investimento: R$ %{x:.0f} mil<extra></extra>',
     }], {
-        title: 'Alocacao recomendada',
+        title: 'Alocação recomendada',
         margin: { l: 150, r: 20, t: 48, b: 40 },
         xaxis: { title: 'Investimento (R$ mil)' },
         template: 'plotly_white',
@@ -512,19 +512,19 @@ function renderCharts() {
     }, {
         type: 'scatter',
         mode: 'lines',
-        name: 'Score medio',
+        name: 'Score médio',
         x: result.history.map((item) => item.generation),
         y: result.history.map((item) => item.averageScore),
         line: { color: '#b45309', width: 2, dash: 'dot' },
     }], {
-        title: 'Convergencia',
+        title: 'Convergência',
         margin: { l: 58, r: 24, t: 48, b: 48 },
-        xaxis: { title: 'Geracao' },
+        xaxis: { title: 'Geração' },
         yaxis: { title: 'Score' },
         template: 'plotly_white',
     }, { responsive: true, displaylogo: false });
 
-    setStatus('Graficos gerados.', 'success');
+    setStatus('Gráficos gerados.', 'success');
 }
 
 function addChannel() {
@@ -533,7 +533,7 @@ function addChannel() {
     state.channels.push({
         id: `CUSTOM_${index}`,
         canal: `Novo canal ${index}`,
-        funil: 'aquisicao',
+        funil: 'aquisição',
         min: 1,
         max: 10,
         receita: 2.5,
