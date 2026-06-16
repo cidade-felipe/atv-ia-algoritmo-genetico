@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from io import BytesIO
 from pathlib import Path
 
 import pandas as pd
@@ -94,6 +95,13 @@ def formatar_funil(valor: str) -> str:
         valor_normalizado,
         valor_normalizado.replace('_', ' ').title(),
     )
+
+
+def gerar_excel_plano(plano: pd.DataFrame) -> bytes:
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+        plano.to_excel(writer, index=False, sheet_name='Plano otimizado')
+    return buffer.getvalue()
 
 
 def configurar_pagina() -> None:
@@ -261,7 +269,7 @@ def renderizar_editor_canais(canais: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def grafico_alocacao(plano: pd.DataFrame) -> go.Figure:
+def grafico_alocacao_canal(plano: pd.DataFrame) -> go.Figure:
     plano_ordenado = plano.sort_values('investimento_mil')
     figura = go.Figure(
         go.Bar(
@@ -288,6 +296,67 @@ def grafico_alocacao(plano: pd.DataFrame) -> go.Figure:
     )
     return figura
 
+def grafico_alocacao_categoria(plano: pd.DataFrame) -> go.Figure: # Igual ao de canal, mas agrupando por categoria
+    plano_agrupado = plano.groupby('categoria', as_index=False).agg({
+        'investimento_mil': 'sum',
+        'lucro_bruto_mil': 'sum',
+    })
+    plano_ordenado = plano_agrupado.sort_values('investimento_mil')
+    figura = go.Figure(
+        go.Bar(
+            x=plano_ordenado['investimento_mil'],
+            y=plano_ordenado['categoria'],
+            orientation='h',
+            marker={
+                'color': plano_ordenado['lucro_bruto_mil'],
+                'colorscale': 'Viridis',
+            },
+            hovertemplate=(
+                '<b>%{y}</b><br>'
+                'Investimento: R$ %{x:.0f} mil<br>'
+                'Lucro bruto: R$ %{marker.color:.1f} mil<extra></extra>'
+            ),
+        )
+    )
+    figura.update_layout(
+        title='Alocação recomendada por categoria',
+        xaxis_title='Investimento (R$ mil)',
+        yaxis_title='Categoria',
+        template='plotly_white',
+        height=430,
+    )
+    return figura
+
+def grafico_alocacao_funil(plano: pd.DataFrame) -> go.Figure: # Igual ao do por canal, mas agrupando por funil e ordenando pelo investimento
+    plano_agrupado = plano.groupby('funil', as_index=False).agg({
+        'investimento_mil': 'sum',
+        'lucro_bruto_mil': 'sum',
+    })
+    plano_ordenado = plano_agrupado.sort_values('investimento_mil')
+    figura = go.Figure(
+        go.Bar(
+            x=plano_ordenado['investimento_mil'],
+            y=plano_ordenado['funil'].apply(formatar_funil),
+            orientation='h',
+            marker={
+                'color': plano_ordenado['lucro_bruto_mil'],
+                'colorscale': 'Viridis',
+            },
+            hovertemplate=(
+                '<b>%{y}</b><br>'
+                'Investimento: R$ %{x:.0f} mil<br>'
+                'Lucro bruto: R$ %{marker.color:.1f} mil<extra></extra>'
+            ),
+        )
+    )
+    figura.update_layout(
+        title='Alocação recomendada por etapa do funil',
+        xaxis_title='Investimento (R$ mil)',
+        yaxis_title='Etapa do funil',
+        template='plotly_white',
+        height=430,
+    )
+    return figura
 
 def grafico_fronteira(fronteira: pd.DataFrame, lucro: float, risco: float) -> go.Figure:
     figura = px.scatter(
@@ -367,19 +436,43 @@ def renderizar_resultado(resultado) -> None:
     st.dataframe(resultado.plano_detalhado, use_container_width=True, hide_index=True)
 
     csv = resultado.plano_detalhado.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        'Baixar plano em CSV',
-        data=csv,
-        file_name='plano_marketing_otimizado_streamlit.csv',
-        mime='text/csv',
+    xlsx = gerar_excel_plano(resultado.plano_detalhado)
+    col_download_csv, col_download_excel, _ = st.columns(
+        [0.26, 0.27, 0.49],
+        gap='small',
     )
+    with col_download_csv:
+        st.download_button(
+            label='Exportar plano otimizado em CSV',
+            data=csv,
+            file_name='plano_otimizado.csv',
+            mime='text/csv',
+            use_container_width=True,
+        )
+    with col_download_excel:
+        st.download_button(
+            label='Exportar plano otimizado em XLSX',
+            data=xlsx,
+            file_name='plano_otimizado.xlsx',
+            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            use_container_width=True,
+        )
 
-    aba_alocacao, aba_fronteira, aba_convergencia = st.tabs(
-        ['Alocação', 'Fronteira de Pareto', 'Convergência']
+    st.subheader('Gráficos')
+
+    aba_alocacao_canal, aba_alocacao_categoria, aba_alocacao_funil, aba_fronteira, aba_convergencia = st.tabs(
+        ['Alocação por Canal', 'Alocação por Categoria', 'Alocação por Funil', 'Fronteira de Pareto', 'Convergência']
     )
+    # aumentar fonte das abas para 18px e negrito usando CSS
 
-    with aba_alocacao:
-        st.plotly_chart(grafico_alocacao(resultado.plano_detalhado), use_container_width=True)
+    with aba_alocacao_canal:
+        st.plotly_chart(grafico_alocacao_canal(resultado.plano_detalhado), use_container_width=True)
+
+    with aba_alocacao_categoria:
+        st.plotly_chart(grafico_alocacao_categoria(resultado.plano_detalhado), use_container_width=True)
+
+    with aba_alocacao_funil:
+        st.plotly_chart(grafico_alocacao_funil(resultado.plano_detalhado), use_container_width=True)
 
     with aba_fronteira:
         st.plotly_chart(

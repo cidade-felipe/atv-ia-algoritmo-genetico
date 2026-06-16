@@ -806,3 +806,68 @@ widgets e das configuracoes de coluna do `st.data_editor`.
 Opiniao tecnica: essa melhoria reduz friccao para quem esta usando a interface
 pela primeira vez e ajuda a conectar cada parametro visual ao comportamento do
 algoritmo genetico.
+
+## Atualizacao dos resultados no Streamlit em 16_06_2026
+
+A interface Streamlit foi ajustada para enriquecer a area de resultados do plano
+otimizado.
+
+Mudancas incorporadas:
+
+- o grafico de alocacao por canal foi mantido como visao principal do plano;
+- foi adicionada uma aba de alocacao por categoria, agrupando investimento e
+  lucro bruto por `categoria`;
+- foi adicionada uma aba de alocacao por etapa do funil, agrupando investimento
+  e lucro bruto por `funil`;
+- o grafico de fronteira de Pareto e o grafico de convergencia continuam
+  disponiveis em abas separadas;
+- alem do download em CSV, a interface passou a oferecer download em Excel
+  (`.xlsx`).
+
+Fato: a primeira implementacao do download em Excel usava
+`DataFrame.to_excel(..., excel_writer=None)`. Esse uso e invalido, porque
+`to_excel` precisa receber um caminho de arquivo, um buffer ou um writer.
+
+Fato: o erro exibido na interface era:
+
+```text
+Invalid file path or buffer object type: <class 'NoneType'>
+```
+
+A correcao criou a funcao `gerar_excel_plano`, que usa `BytesIO` e
+`pd.ExcelWriter` com engine `openpyxl` para gerar o arquivo Excel em memoria
+antes de enviar os bytes para `st.download_button`.
+
+Tambem foi adicionada a dependencia `openpyxl>=3.1` em `requirements.txt`,
+porque ela e necessaria para criar arquivos `.xlsx` com pandas.
+
+Opiniao tecnica: gerar o Excel em memoria e a melhor opcao para Streamlit, porque
+evita criar arquivo temporario no disco, reduz risco de conflito entre usuarios e
+mantem a exportacao acoplada apenas ao clique de download.
+
+## Ajuste visual dos downloads no Streamlit em 16_06_2026
+
+Foram analisadas novas alteracoes feitas na area de resultados da interface
+Streamlit.
+
+Fato: a interface passou a exibir a secao `Graficos` depois da tabela do plano
+recomendado, separando melhor a leitura dos resultados numericos e visuais.
+
+Fato: os botoes de download agora exportam:
+
+- `plano_otimizado.csv`;
+- `plano_otimizado.xlsx`.
+
+Fato: os botoes estavam usando `st.columns([1, 1, 1])`, o que dividia a linha em
+tres blocos iguais. Como cada botao ficava no inicio de uma coluna grande, o
+botao de Excel aparecia distante do botao de CSV.
+
+A correcao alterou o layout para colunas proporcionais menores no inicio da
+linha, usando `st.columns([0.24, 0.27, 0.49], gap='small')`, e aplicou
+`use_container_width=True` nos dois botoes. Assim, os botoes ficam lado a lado,
+com pouco espaco entre eles, e a area restante fica como respiro a direita.
+
+Opiniao tecnica: essa abordagem e mais simples e sustentavel do que usar CSS
+customizado para esse caso. O proprio Streamlit continua controlando a
+responsividade, enquanto o layout fica visualmente mais proximo do que se espera
+em botoes relacionados.
