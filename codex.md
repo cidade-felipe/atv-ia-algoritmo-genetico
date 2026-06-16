@@ -1022,3 +1022,32 @@ Opiniao tecnica: foi mantido o nome `MixGen` como texto renderizado pelo proprio
 Streamlit, e nao dentro da imagem. Essa escolha evita risco de texto distorcido
 em imagem gerada, melhora nitidez em diferentes tamanhos e deixa a marca mais
 facil de ajustar futuramente.
+
+## Persistencia do resultado no Streamlit em 16_06_2026
+
+Foi corrigido o comportamento em que a tela perdia o plano calculado ao clicar
+nos botoes de exportacao.
+
+Fato: `st.download_button` executa um rerun por padrao. Como o resultado estava
+guardado apenas em uma variavel local dentro do fluxo do botao `Calcular plano
+otimizado`, o Streamlit recalculava a pagina e a area de resultados desaparecia
+apos o download.
+
+A correcao adicionou:
+
+- a constante `CHAVE_RESULTADO_OTIMIZACAO`;
+- persistencia do ultimo resultado bem-sucedido em `st.session_state`;
+- leitura do resultado salvo para renderizar novamente a tela apos reruns;
+- `on_click='ignore'` nos botoes `Exportar CSV` e `Exportar XLSX`, evitando rerun
+  desnecessario durante o download;
+- o botao `Novo cenário`, que limpa o resultado salvo e permite iniciar outra
+  simulacao.
+
+Inferencia: o nome `Novo cenário` foi escolhido como alternativa mais natural a
+`Restaurar`, porque a acao real nao restaura um estado antigo, mas limpa o
+resultado atual para preparar uma nova analise.
+
+Opiniao tecnica: combinar `st.session_state` com `on_click='ignore'` e a solucao
+mais robusta aqui. O download deixa de apagar visualmente o resultado e, mesmo
+quando algum rerun acontecer por outro motivo, o ultimo plano calculado continua
+disponivel ate a pessoa clicar em `Novo cenário`.

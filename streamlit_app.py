@@ -18,6 +18,7 @@ from src.motor_algoritmo_genetico import (
 RAIZ_PROJETO = Path(__file__).resolve().parent
 CAMINHO_DADOS = RAIZ_PROJETO / 'data' / 'canais_marketing.csv'
 CAMINHO_LOGO = RAIZ_PROJETO / 'assets' / 'images' / 'mixgen-logo.png'
+CHAVE_RESULTADO_OTIMIZACAO = 'resultado_otimizacao'
 
 CANAL_ROTULOS = {
     'Otimizacao de conversao': 'Otimização de conversão',
@@ -203,6 +204,10 @@ def preparar_plano_recomendado_para_exibicao(plano: pd.DataFrame) -> pd.DataFram
     plano_exibicao['categoria'] = plano_exibicao['categoria'].apply(formatar_categoria)
     plano_exibicao['funil'] = plano_exibicao['funil'].apply(formatar_funil)
     return plano_exibicao.rename(columns=COLUNAS_PLANO_RECOMENDADO)
+
+
+def limpar_resultado_otimizacao() -> None:
+    st.session_state.pop(CHAVE_RESULTADO_OTIMIZACAO, None)
 
 
 def configurar_pagina() -> None:
@@ -587,24 +592,33 @@ def renderizar_resultado(resultado) -> None:
 
     csv = resultado.plano_detalhado.to_csv(index=False).encode('utf-8')
     xlsx = gerar_excel_plano(resultado.plano_detalhado)
-    col_download_csv, col_download_excel, _ = st.columns(
-        [0.26, 0.27, 0.49],
+    col_download_csv, col_download_excel, col_novo_cenario, _ = st.columns(
+        [0.18, 0.18, 0.16, 0.48],
         gap='small',
     )
     with col_download_csv:
         st.download_button(
-            label='Exportar plano otimizado em CSV',
+            label='Exportar CSV',
             data=csv,
             file_name='plano_otimizado.csv',
             mime='text/csv',
+            on_click='ignore',
             use_container_width=True,
         )
     with col_download_excel:
         st.download_button(
-            label='Exportar plano otimizado em XLSX',
+            label='Exportar XLSX',
             data=xlsx,
             file_name='plano_otimizado.xlsx',
             mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            on_click='ignore',
+            use_container_width=True,
+        )
+    with col_novo_cenario:
+        st.button(
+            'Novo cenário',
+            help='Limpa o resultado atual para começar uma nova simulação.',
+            on_click=limpar_resultado_otimizacao,
             use_container_width=True,
         )
 
@@ -645,17 +659,22 @@ def main() -> None:
     config = renderizar_parametros()
     canais_editados = renderizar_editor_canais(carregar_canais_padrao())
 
-    if st.button('Calcular plano otimizado', type='primary'):
+    calcular = st.button('Calcular plano otimizado', type='primary')
+    if calcular:
         try:
             canais = normalizar_canais(canais_editados)
             validar_canais(canais)
             with st.spinner('Calculando plano otimizado...'):
                 resultado = executar_algoritmo_genetico(canais, config)
+            st.session_state[CHAVE_RESULTADO_OTIMIZACAO] = resultado
             st.success('Cálculo finalizado com sucesso.')
-            renderizar_resultado(resultado)
         except Exception as erro:  # noqa: BLE001 - exibe erro amigavel na interface
             st.error(f'Não foi possível calcular: {erro}')
-    else:
+
+    resultado_salvo = st.session_state.get(CHAVE_RESULTADO_OTIMIZACAO)
+    if resultado_salvo is not None:
+        renderizar_resultado(resultado_salvo)
+    elif not calcular:
         st.info('Ajuste os valores e clique em "Calcular plano otimizado".')
 
 
