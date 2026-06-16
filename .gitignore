@@ -217,6 +217,7 @@ __marimo__/
 # Project generated files
 Backup/
 outputs/
+tmp/
 
 # Streamlit
 .streamlit/secrets.toml

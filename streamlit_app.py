@@ -17,6 +17,7 @@ from src.motor_algoritmo_genetico import (
 
 RAIZ_PROJETO = Path(__file__).resolve().parent
 CAMINHO_DADOS = RAIZ_PROJETO / 'data' / 'canais_marketing.csv'
+CAMINHO_LOGO = RAIZ_PROJETO / 'assets' / 'images' / 'mixgen-logo.png'
 
 CANAL_ROTULOS = {
     'Otimizacao de conversao': 'Otimização de conversão',
@@ -206,13 +207,30 @@ def preparar_plano_recomendado_para_exibicao(plano: pd.DataFrame) -> pd.DataFram
 
 def configurar_pagina() -> None:
     st.set_page_config(
-        page_title='Otimizador de mix de marketing',
+        page_title='MixGen',
+        page_icon=str(CAMINHO_LOGO),
         layout='wide',
-    )   
-    st.title('MixGen')
-    st.caption(
-        'Otimiza mixes de marketing com base em critérios de investimento, retorno e risco, utilizando um algoritmo genético.'
     )
+    st.logo(
+        str(CAMINHO_LOGO),
+        size='large',
+        icon_image=str(CAMINHO_LOGO),
+    )
+
+
+def renderizar_cabecalho() -> None:
+    coluna_logo, coluna_texto = st.columns(
+        [0.08, 0.92],
+        gap='small',
+        vertical_alignment='center',
+    )
+    with coluna_logo:
+        st.image(str(CAMINHO_LOGO), width=84)
+    with coluna_texto:
+        st.title('MixGen')
+        st.caption(
+            'Otimiza mixes de marketing com base em critérios de investimento, retorno e risco, utilizando um algoritmo genético.'
+        )
 
 
 def renderizar_parametros() -> ConfigMarketingAG:
@@ -622,6 +640,7 @@ def renderizar_resultado(resultado) -> None:
 
 def main() -> None:
     configurar_pagina()
+    renderizar_cabecalho()
 
     config = renderizar_parametros()
     canais_editados = renderizar_editor_canais(carregar_canais_padrao())

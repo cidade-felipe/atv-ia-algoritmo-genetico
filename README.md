@@ -1,6 +1,16 @@
-# Algoritmo genetico para otimizacao de mix de marketing
+# MixGen
+
+Otimizador evolutivo de mix de marketing.
 
 Este projeto implementa um exemplo de algoritmo genetico aplicado a uma decisao realista de negocio: distribuir um orcamento limitado entre varios canais de marketing.
+
+## Deploy
+
+A aplicacao Streamlit esta publicada em:
+
+```text
+https://mixgen.streamlit.app/
+```
 
 A pergunta central do projeto e:
 
@@ -255,6 +265,12 @@ Também existe uma interface em Streamlit:
 
 ```powershell
 streamlit run streamlit_app.py
+```
+
+Tambem e possivel acessar a versao publicada:
+
+```text
+https://mixgen.streamlit.app/
 ```
 
 Ela permite editar a tabela de canais, ajustar os parâmetros do algoritmo,

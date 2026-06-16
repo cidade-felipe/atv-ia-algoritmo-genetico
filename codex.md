@@ -2,6 +2,15 @@
 
 ## Visao geral
 
+O projeto passou a usar o nome `MixGen`, com o subtitulo
+`Otimizador evolutivo de mix de marketing`.
+
+Fato: a aplicacao Streamlit foi publicada em:
+
+```text
+https://mixgen.streamlit.app/
+```
+
 Este projeto implementa um exemplo didatico de algoritmo genetico aplicado a
 alocacao de orcamento de marketing. A versao atual substitui o exemplo anterior
 de roteirizacao de entregas por um problema menos comum em aulas introdutorias:
@@ -978,3 +987,38 @@ colunas tecnicos e os valores internos para reuso em analises.
 Opiniao tecnica: essa e a melhor separacao para este caso. A interface fica mais
 clara para apresentacao, mas os dados exportados continuam previsiveis para quem
 quiser abrir em outra ferramenta, automatizar analises ou comparar resultados.
+
+## Logo do MixGen em 16_06_2026
+
+Foi criado um logo visual para o projeto `MixGen` e integrado na interface
+Streamlit.
+
+Fato: o logo final foi salvo em:
+
+```text
+assets/images/mixgen-logo.png
+```
+
+Fato: o asset foi gerado como imagem raster com fundo chroma-key e depois teve o
+fundo removido localmente, resultando em um PNG com transparencia (`RGBA`).
+O arquivo intermediario com fundo chroma-key fica em `tmp/imagegen/`, pasta que
+foi adicionada ao `.gitignore` por conter apenas artefatos temporarios de
+geracao.
+
+O logo representa visualmente os conceitos centrais do projeto:
+
+- DNA ou evolucao, conectando com algoritmo genetico;
+- barras de crescimento, conectando com marketing e receita;
+- curva de fronteira/otimizacao, conectando com Pareto e trade-off entre lucro e
+  risco.
+
+A interface Streamlit passou a usar o logo em tres pontos:
+
+- `page_icon`, para o icone da aba do navegador;
+- `st.logo`, para exibir a marca na sidebar quando suportado pelo Streamlit;
+- cabecalho principal, ao lado do titulo `MixGen`.
+
+Opiniao tecnica: foi mantido o nome `MixGen` como texto renderizado pelo proprio
+Streamlit, e nao dentro da imagem. Essa escolha evita risco de texto distorcido
+em imagem gerada, melhora nitidez em diferentes tamanhos e deixa a marca mais
+facil de ajustar futuramente.
