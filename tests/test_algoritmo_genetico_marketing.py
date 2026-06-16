@@ -3,17 +3,16 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src.algoritmo_genetico_marketing import (
+from src.motor_algoritmo_genetico import (
     ConfigMarketingAG,
     avaliar_individuo,
     carregar_canais,
     criar_alocacao_referencia,
     executar_algoritmo_genetico,
-    gerar_grafico_alocacao,
-    gerar_grafico_fronteira,
     reparar_alocacao,
     validar_canais,
 )
+from src.relatorios_marketing import gerar_grafico_alocacao, gerar_grafico_fronteira
 
 
 RAIZ = Path(__file__).resolve().parents[1]

@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.algoritmo_genetico_marketing import (
+from src.motor_algoritmo_genetico import (
     ConfigMarketingAG,
     ResultadoMarketingAG,
     calcular_receitas_por_canal,

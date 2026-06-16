@@ -126,6 +126,41 @@ Operadores usados:
 
 O reparo e essencial. Depois do cruzamento ou da mutacao, um individuo pode violar o orcamento ou os limites por canal. A funcao de reparo ajusta o plano para que ele volte a ser executavel.
 
+## Separacao entre motor e interfaces
+
+O codigo agora separa claramente o que e algoritmo genetico do que e interface,
+relatorio ou orquestracao.
+
+Fato: o motor do algoritmo genetico fica em
+`src/motor_algoritmo_genetico.py`.
+
+Esse e o arquivo principal para explicar o desenvolvimento tecnico do
+algoritmo. Ele contem:
+
+- validacao da base de canais e do orcamento;
+- representacao do individuo como lista de investimentos;
+- configuracao do `DEAP`;
+- funcao fitness multiobjetivo;
+- calculo de receita com saturacao;
+- calculo de sinergias entre pares de canais;
+- geracao da populacao inicial;
+- cruzamento com reparo;
+- mutacao por redistribuicao de verba;
+- selecao NSGA-II;
+- montagem da fronteira de Pareto;
+- escolha do plano recomendado.
+
+Fato: os relatorios estaticos em HTML, CSS e JavaScript ficam em
+`src/relatorios_marketing.py`.
+
+Fato: `src/algoritmo_genetico_marketing.py` virou apenas um orquestrador. Ele
+carrega os dados, chama o motor e aciona a geracao dos arquivos de saida.
+
+Opiniao tecnica: essa separacao e superior para apresentacao e manutencao,
+porque evita misturar regra evolutiva com detalhes de front-end. Na pratica, isso
+reduz acoplamento, facilita testes e deixa mais claro onde mexer caso seja
+necessario alterar fitness, operadores geneticos ou exibicao dos resultados.
+
 ## Como interpretar o resultado
 
 O algoritmo gera um plano recomendado, mas tambem gera uma fronteira de Pareto.
@@ -146,7 +181,9 @@ Impacto pratico: essa visualizacao ajuda uma pessoa de negocio a escolher uma es
 ├── src/
 │   ├── __init__.py
 │   ├── api.py
-│   └── algoritmo_genetico_marketing.py
+│   ├── algoritmo_genetico_marketing.py
+│   ├── motor_algoritmo_genetico.py
+│   └── relatorios_marketing.py
 ├── tests/
 │   ├── test_api.py
 │   └── test_algoritmo_genetico_marketing.py
@@ -225,7 +262,7 @@ calcular o plano recomendado, visualizar métricas, gerar gráficos interativos 
 baixar o plano em CSV.
 
 Fato: o Streamlit usa diretamente o motor Python em
-`src/algoritmo_genetico_marketing.py`.
+`src/motor_algoritmo_genetico.py`.
 
 Opinião técnica: para exploração, apresentação em aula e prototipagem, o
 Streamlit é a opção mais simples. Ele reduz a quantidade de código de interface e
@@ -235,7 +272,8 @@ customizada, a versão FastAPI + HTML/CSS/JS continua sendo mais flexível.
 ## Como rodar o script de relatórios
 
 Além da interface com backend, ainda é possível executar o script que gera
-relatórios estáticos:
+relatórios estáticos. Esse script fica em `src/algoritmo_genetico_marketing.py`
+e apenas coordena a execução:
 
 ```powershell
 python src\algoritmo_genetico_marketing.py
@@ -328,6 +366,7 @@ Os testes verificam:
 - geracao de um plano valido pelo algoritmo;
 - existencia da fronteira de Pareto;
 - superacao de uma referencia distribuida simples.
+- separacao dos relatorios HTML em arquivos externos de CSS e JavaScript.
 
 ## Principais trade-offs
 
@@ -338,6 +377,8 @@ Custo de implementacao: baixo a moderado, porque `DEAP` fornece a infraestrutura
 Escalabilidade: suficiente para o exemplo didatico. Em producao, seria importante paralelizar a avaliacao e calibrar os parametros com dados historicos.
 
 Manutencao: o codigo separa validacao, fitness, operadores geneticos, reparo e geracao de saidas.
+O motor evolutivo fica isolado em `src/motor_algoritmo_genetico.py`, enquanto
+relatorios e interfaces apenas consomem esse motor.
 
 Performance: o algoritmo nao testa todas as combinacoes possiveis, entao troca garantia de otimo global por uma busca eficiente em um espaco grande de planos.
 

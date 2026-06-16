@@ -77,7 +77,7 @@ Antes da execucao, o codigo valida:
 - orcamento total dentro do minimo e maximo viavel.
 
 Fato: essa validacao esta implementada em `validar_canais` e
-`validar_orcamento`.
+`validar_orcamento`, dentro de `src/motor_algoritmo_genetico.py`.
 
 Impacto pratico: em ambiente real, validacao de entrada reduz risco de gerar um
 plano impossivel, como investir abaixo do minimo contratual de um canal ou acima
@@ -124,6 +124,166 @@ risco_ponderado = soma(investimento_do_canal * risco_do_canal)
 
 Inferencia: o modelo de receita e simplificado. Ele serve para demonstrar a
 tecnica, nao para substituir um modelo econometrico real.
+
+## Motor do algoritmo genetico
+
+O motor do algoritmo genetico foi separado no arquivo
+`src/motor_algoritmo_genetico.py`.
+
+Esse arquivo deve ser considerado a parte central do projeto. Ele nao gera HTML,
+nao escreve CSS, nao monta telas e nao depende das interfaces. A responsabilidade
+dele e receber uma base de canais, receber uma configuracao de execucao e
+devolver um `ResultadoMarketingAG` com:
+
+- plano recomendado;
+- metricas consolidadas;
+- historico das geracoes;
+- fronteira de Pareto;
+- plano detalhado por canal;
+- configuracao usada.
+
+Fato: a separacao foi feita para deixar a explicacao principal focada no
+algoritmo genetico em si, principalmente populacao, individuos, fitness,
+sinergias, operadores geneticos, reparo e selecao.
+
+Opiniao tecnica: essa arquitetura e mais profissional porque reduz acoplamento.
+O mesmo motor pode ser usado pela API FastAPI, pela interface Streamlit, pelos
+testes automatizados e pelo script de relatorios sem duplicar a regra de
+otimizacao.
+
+### Configuracao do algoritmo
+
+`ConfigMarketingAG` concentra os parametros evolutivos:
+
+- `orcamento_mil`: soma total que todo individuo precisa respeitar.
+- `tamanho_populacao`: quantidade de planos mantidos em cada geracao.
+- `geracoes`: quantidade de ciclos evolutivos.
+- `descendentes_por_geracao`: quantidade de novos individuos criados por ciclo.
+- `taxa_crossover`: probabilidade de gerar descendentes por cruzamento.
+- `taxa_mutacao`: probabilidade de gerar descendentes por mutacao.
+- `peso_risco_decisao`: peso usado depois da evolucao para escolher um plano
+  recomendado dentro da fronteira de Pareto.
+- `semente`: valor que torna a execucao reprodutivel.
+
+Fato: o `DEAP` usa esses parametros na toolbox criada por `criar_toolbox`.
+
+### Populacao inicial
+
+A funcao `gerar_alocacao_inicial` cria individuos viaveis desde o inicio. Ela
+parte dos investimentos minimos de todos os canais e distribui o restante do
+orcamento aleatoriamente, sempre respeitando o maximo de cada canal.
+
+Impacto pratico: com isso, a primeira populacao ja nasce executavel. O algoritmo
+nao perde tempo avaliando planos impossiveis, como orcamentos abaixo do minimo
+contratual ou acima da capacidade de um canal.
+
+### Fitness no motor
+
+A funcao `avaliar_individuo` chama `calcular_metricas_plano` e devolve:
+
+```text
+(lucro_estimado_mil, risco_ponderado_mil)
+```
+
+No `DEAP`, o fitness foi configurado com pesos `(1.0, -1.0)`. Isso significa:
+
+- maximizar lucro;
+- minimizar risco.
+
+O lucro estimado e calculado como:
+
+```text
+lucro = receita_total_com_sinergia - investimento_total
+```
+
+O risco ponderado e calculado como:
+
+```text
+risco_ponderado = soma(investimento_do_canal * risco_do_canal)
+```
+
+Fato: por ser multiobjetivo, o algoritmo nao procura apenas uma solucao unica.
+Ele constroi uma fronteira de Pareto com diferentes compromissos entre retorno e
+risco.
+
+### Saturacao no motor
+
+A funcao `calcular_receitas_por_canal` reduz o retorno marginal quando um canal
+recebe investimento proximo do seu limite maximo. O fator de saturacao evita que
+o algoritmo concentre verba demais em um canal so porque ele possui boa receita
+media.
+
+Opiniao tecnica: essa escolha melhora o realismo do exemplo. Em marketing,
+principalmente em midia paga, aumentar verba indefinidamente costuma reduzir a
+eficiencia marginal.
+
+### Sinergias no motor
+
+A funcao `calcular_sinergia` aplica bonus quando dois canais complementares
+recebem investimento no mesmo plano. O bonus usa o menor valor de receita entre
+os dois canais como base, porque a sinergia fica limitada pelo lado mais fraco do
+par.
+
+Exemplos de pares:
+
+- Search Ads com Conteudo SEO;
+- Retargeting com CRM;
+- Programa de indicacao com CRO;
+- LinkedIn Ads com Webinars B2B;
+- YouTube Shorts com TikTok Ads;
+- Promocoes marketplace com Search Ads.
+
+Inferencia: essas sinergias sao plausiveis em marketing, mas continuam sendo
+simuladas. Em um uso real, elas deveriam ser calibradas com experimento,
+historico de campanhas ou modelo estatistico.
+
+### Cruzamento no motor
+
+O cruzamento usa `tools.cxTwoPoint`. Esse operador combina trechos de dois
+planos, criando descendentes que herdam partes de solucoes diferentes.
+
+Depois do cruzamento, `cruzamento_com_reparo` chama `reparar_alocacao`. Isso e
+necessario porque a simples troca de genes pode quebrar a soma do orcamento ou
+ultrapassar limites por canal.
+
+### Mutacao no motor
+
+A mutacao usa `mutacao_redistribuir`. Ela escolhe um canal de origem que esta
+acima do minimo e transfere uma pequena quantidade de verba para outro canal que
+ainda esta abaixo do maximo.
+
+Impacto pratico: a mutacao introduz exploracao. Sem ela, a populacao poderia
+ficar presa em combinacoes parecidas demais depois de algumas geracoes.
+
+### Reparo no motor
+
+`reparar_alocacao` e uma das funcoes mais importantes do motor. Ela garante:
+
+- valores inteiros;
+- investimento minimo por canal;
+- investimento maximo por canal;
+- soma final exatamente igual ao orcamento.
+
+Opiniao tecnica: para este problema, reparar individuos e melhor do que apenas
+descartar individuos invalidos. Descartar desperdicaria muito processamento,
+principalmente porque cruzamento e mutacao frequentemente alteram a soma total
+do orcamento.
+
+### Selecao e fronteira de Pareto no motor
+
+A selecao usa `tools.selNSGA2`. O NSGA-II preserva solucoes nao dominadas e
+mantem diversidade entre alternativas. O resultado e uma fronteira de Pareto,
+onde cada plano representa uma troca diferente entre lucro e risco.
+
+A funcao `escolher_plano_recomendado` escolhe uma solucao dentro da fronteira
+usando:
+
+```text
+score = lucro_estimado - peso_risco_decisao * risco_ponderado
+```
+
+Fato: esse score nao substitui a otimizacao multiobjetivo. Ele e usado somente
+depois da evolucao para selecionar um plano recomendado para exibicao.
 
 ## Saturacao
 
@@ -194,7 +354,9 @@ funcionando corretamente.
 ├── src/
 │   ├── __init__.py
 │   ├── api.py
-│   └── algoritmo_genetico_marketing.py
+│   ├── algoritmo_genetico_marketing.py
+│   ├── motor_algoritmo_genetico.py
+│   └── relatorios_marketing.py
 ├── tests/
 │   ├── test_api.py
 │   └── test_algoritmo_genetico_marketing.py
@@ -279,9 +441,9 @@ interface/
 ```
 
 `index.html` contem a estrutura da tela. `app.css` contem o layout e a aparencia.
-`app.js` contem a logica interativa, incluindo leitura dos inputs, validacao,
-execucao do algoritmo genetico em JavaScript, renderizacao dos resultados,
-chamada dos graficos Plotly e exportacao de CSV.
+`app.js` contem a logica interativa, incluindo leitura dos inputs, validacao
+visual, chamada da API, renderizacao dos resultados, chamada dos graficos Plotly
+e exportacao de CSV.
 
 Fato: a interface agora consome o backend Python em `POST /api/otimizar`.
 
@@ -299,8 +461,8 @@ Endpoints:
 - `GET /`: serve `interface/index.html`.
 - `GET /api/health`: retorna status simples da API.
 - `POST /api/otimizar`: recebe canais e parametros, executa o algoritmo genetico
-  com `DEAP` e devolve metricas, plano recomendado, fronteira de Pareto e
-  historico de evolucao.
+  com o motor em `src/motor_algoritmo_genetico.py` e devolve metricas, plano
+  recomendado, fronteira de Pareto e historico de evolucao.
 
 Para subir o servidor:
 
@@ -331,7 +493,7 @@ A interface Streamlit permite:
 
 - editar a tabela de canais com `st.data_editor`;
 - alterar parametros do algoritmo na barra lateral;
-- executar o algoritmo genetico com o motor Python existente;
+- executar o algoritmo genetico com `src/motor_algoritmo_genetico.py`;
 - visualizar metricas de receita, lucro, risco e sinergia;
 - ver a tabela do plano recomendado;
 - gerar graficos de alocacao, fronteira de Pareto e convergencia;
@@ -398,6 +560,7 @@ Eles verificam:
 - fronteira de Pareto nao vazia;
 - historico com quantidade esperada de geracoes;
 - comparacao contra uma referencia distribuida simples.
+- separacao dos relatorios HTML em arquivos externos de CSS e JavaScript.
 
 Fato: os testes nao provam que o algoritmo encontrou o otimo global.
 
@@ -418,6 +581,10 @@ de fitness poderia ser paralelizada e calibrada com dados historicos.
 
 Manutencao: a separacao em funcoes torna simples trocar a funcao de receita,
 adicionar canais, mudar parametros ou testar outro operador genetico.
+Depois da refatoracao de arquitetura, a manutencao ficou ainda mais direta:
+alteracoes no algoritmo ficam concentradas em `src/motor_algoritmo_genetico.py`,
+alteracoes em relatorios estaticos ficam em `src/relatorios_marketing.py`, e o
+script `src/algoritmo_genetico_marketing.py` apenas coordena a execucao.
 
 Performance: o algoritmo nao enumera todas as combinacoes possiveis. Ele troca
 garantia de otimalidade global por busca eficiente em um espaco grande de
@@ -507,7 +674,7 @@ o tamanho do projeto, mas reduz risco de falha por indisponibilidade de rede.
 Foi criado um backend Python com FastAPI para executar a otimizacao usada pela
 interface. A versao anterior calculava no navegador com JavaScript. A nova versao
 envia os dados da tela para `POST /api/otimizar`, executa o motor Python em
-`src/algoritmo_genetico_marketing.py` e retorna JSON com:
+`src/motor_algoritmo_genetico.py` e retorna JSON com:
 
 - metricas consolidadas;
 - plano recomendado por canal;
@@ -543,3 +710,33 @@ grafia e pequenas escolhas de escrita em portugues do Brasil. A revisao incluiu:
 Essa mudanca nao alterou a logica do algoritmo, os parametros numericos nem os
 dados usados no calculo. O objetivo foi melhorar apresentacao, clareza e
 qualidade visual da interface.
+
+## Atualizacao de arquitetura em 16_06_2026
+
+O arquivo `src/algoritmo_genetico_marketing.py` foi refatorado para separar o
+motor do algoritmo genetico das partes de front-end, relatorios e orquestracao.
+
+Nova divisao:
+
+- `src/motor_algoritmo_genetico.py`: contem somente o algoritmo genetico e suas
+  regras de negocio, incluindo validacao, individuos, fitness, saturacao,
+  sinergias, populacao, cruzamento, mutacao, reparo, selecao NSGA-II, fronteira
+  de Pareto e montagem do resultado.
+- `src/relatorios_marketing.py`: contem somente a geracao de relatorios
+  estaticos, assets de CSS, assets de JavaScript, Plotly e resumo textual.
+- `src/algoritmo_genetico_marketing.py`: ficou como script de orquestracao para
+  carregar o CSV, chamar o motor e gerar outputs.
+- `src/api.py`: passou a importar o motor diretamente.
+- `streamlit_app.py`: passou a importar o motor diretamente.
+- `tests/test_algoritmo_genetico_marketing.py`: passou a testar o motor e os
+  relatorios por modulos separados.
+
+Fato: a regra evolutiva nao depende mais dos modulos de relatorio.
+
+Inferencia: essa separacao facilita a apresentacao academica, porque a
+explicacao principal pode se concentrar em `src/motor_algoritmo_genetico.py`
+sem misturar detalhes de HTML, CSS, JavaScript ou Plotly.
+
+Opiniao tecnica: essa e a melhor estrutura para evoluir o projeto. Ela reduz
+risco de regressao, deixa a API e o Streamlit consumindo a mesma fonte de regra
+e permite trocar a camada de apresentacao sem reescrever o algoritmo genetico.

@@ -7,7 +7,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-from src.algoritmo_genetico_marketing import (
+from src.motor_algoritmo_genetico import (
     ConfigMarketingAG,
     executar_algoritmo_genetico,
     validar_canais,
