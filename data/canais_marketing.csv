@@ -7,7 +7,7 @@ INFLU_MICRO,Influenciadores micro,marca,aquisicao,2,14,2.85,0.48,0.45
 TIKTOK,TikTok Ads,midia_paga,aquisicao,3,20,3.05,0.62,0.52
 LINKEDIN,LinkedIn Ads,b2b,aquisicao,2,15,2.70,0.42,0.40
 REFERRAL,Programa de indicacao,relacionamento,retencao,4,17,3.75,0.30,0.20
-YOUTUBE,YouTube Shorts,marca,aquisicao,2,16,2.60,0.50,0.39
+YOUTUBE_SHORTS,YouTube Shorts,marca,aquisicao,2,16,2.60,0.50,0.39
 MARKETPLACE,Promocoes marketplace,trade,conversao,5,22,3.35,0.58,0.36
 WEBINAR,Webinars B2B,b2b,nutricao,1,12,3.15,0.34,0.27
 CRO,Otimizacao de conversao,produto,conversao,4,18,4.35,0.24,0.14
