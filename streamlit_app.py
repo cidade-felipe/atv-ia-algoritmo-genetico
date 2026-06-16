@@ -17,16 +17,54 @@ from src.motor_algoritmo_genetico import (
 
 RAIZ_PROJETO = Path(__file__).resolve().parent
 CAMINHO_DADOS = RAIZ_PROJETO / 'data' / 'canais_marketing.csv'
+
+CANAL_ROTULOS = {
+    'Otimizacao de conversao': 'Otimização de conversão',
+    'Programa de indicacao': 'Programa de indicação',
+    'Conteudo SEO': 'Conteúdo SEO',
+    'Search Ads': 'Search Ads',
+    'CRM e email': 'CRM e Email',
+    'Retargeting': 'Retargeting',
+    'Promocoes marketplace': 'Promoções marketplace',
+    'Webinars B2B': 'Webinars B2B',
+    'LinkedIn Ads': 'LinkedIn Ads',
+    'TikTok Ads': 'TikTok Ads',
+    'Influenciadores micro': 'Influenciadores micro',
+    'YouTube Shorts': 'YouTube Shorts',
+}
+
 FUNIL_ROTULOS = {
     'aquisicao': 'Aquisição',
     'conversao': 'Conversão',
     'nutricao': 'Nutrição',
     'retencao': 'Retenção',
 }
+
+CATEGORIA_ROTULOS = {
+    'midia_paga': 'Mídia paga',
+    'relacionamento': 'Relacionamento',
+    'organico': 'Orgânico',
+    'marca': 'Marca',
+    'produto': 'Produto',
+    'b2b': 'B2B',
+    'trade': 'Trade',
+}
+
+CANAL_VALORES_POR_ROTULO = {
+    rotulo: valor
+    for valor, rotulo in CANAL_ROTULOS.items()
+}
+
 FUNIL_VALORES_POR_ROTULO = {
     rotulo: valor
     for valor, rotulo in FUNIL_ROTULOS.items()
 }
+
+CATEGORIA_VALORES_POR_ROTULO = {
+    rotulo: valor
+    for valor, rotulo in CATEGORIA_ROTULOS.items()
+}
+
 TOOLTIPS_PARAMETROS = {
     'orcamento': 'Valor total disponível, em milhares de reais, que o algoritmo deve distribuir entre os canais.',
     'populacao': 'Quantidade de planos candidatos avaliados em cada geração do algoritmo genético.',
@@ -48,6 +86,16 @@ TOOLTIPS_COLUNAS = {
     'saturacao': 'Quanto o retorno marginal do canal cai quando o investimento se aproxima do máximo.',
     'risco': 'Incerteza relativa do canal, usada para penalizar planos muito arriscados.',
 }
+COLUNAS_PLANO_RECOMENDADO = {
+    'id': 'ID',
+    'canal': 'Canal',
+    'categoria': 'Categoria',
+    'funil': 'Funil',
+    'investimento_mil': 'Investimento (R$ mil)',
+    'receita_estimada_mil': 'Receita estimada (R$ mil)',
+    'lucro_bruto_mil': 'Lucro bruto (R$ mil)',
+    'risco_ponderado_mil': 'Risco ponderado (R$ mil)',
+}
 
 
 def carregar_canais_padrao() -> pd.DataFrame:
@@ -57,8 +105,18 @@ def carregar_canais_padrao() -> pd.DataFrame:
 def normalizar_canais(canais: pd.DataFrame) -> pd.DataFrame:
     canais = canais.copy()
     canais['id'] = canais['id'].astype(str).str.strip().str.upper().str.replace(' ', '_')
-    canais['canal'] = canais['canal'].astype(str).str.strip()
-    canais['categoria'] = canais['categoria'].astype(str).str.strip()
+    canais['canal'] = (
+        canais['canal']
+        .astype(str)
+        .str.strip()
+        .replace(CANAL_VALORES_POR_ROTULO)
+    )
+    canais['categoria'] = (
+        canais['categoria']
+        .astype(str)
+        .str.strip()
+        .replace(CATEGORIA_VALORES_POR_ROTULO)
+    )
     canais['funil'] = (
         canais['funil']
         .astype(str)
@@ -89,6 +147,40 @@ def montar_opcoes_funil(canais: pd.DataFrame) -> list[str]:
     return list(dict.fromkeys([*FUNIL_ROTULOS, *funis_csv]))
 
 
+def montar_opcoes_categoria(canais: pd.DataFrame) -> list[str]:
+    categorias_csv = [
+        str(valor).strip()
+        for valor in canais['categoria'].dropna().unique()
+        if str(valor).strip()
+    ]
+    return list(dict.fromkeys([*CATEGORIA_ROTULOS, *categorias_csv]))
+
+
+def montar_opcoes_canal(canais: pd.DataFrame) -> list[str]:
+    canais_csv = [
+        str(valor).strip()
+        for valor in canais['canal'].dropna().unique()
+        if str(valor).strip()
+    ]
+    return list(dict.fromkeys([*CANAL_ROTULOS, *canais_csv]))
+
+
+def formatar_canal(valor: str) -> str:
+    valor_normalizado = str(valor).strip()
+    return CANAL_ROTULOS.get(
+        valor_normalizado,
+        valor_normalizado.replace('_', ' ').title(),
+    )
+
+
+def formatar_categoria(valor: str) -> str:
+    valor_normalizado = str(valor).strip()
+    return CATEGORIA_ROTULOS.get(
+        valor_normalizado,
+        valor_normalizado.replace('_', ' ').title(),
+    )
+
+
 def formatar_funil(valor: str) -> str:
     valor_normalizado = str(valor).strip()
     return FUNIL_ROTULOS.get(
@@ -104,6 +196,14 @@ def gerar_excel_plano(plano: pd.DataFrame) -> bytes:
     return buffer.getvalue()
 
 
+def preparar_plano_recomendado_para_exibicao(plano: pd.DataFrame) -> pd.DataFrame:
+    plano_exibicao = plano.copy()
+    plano_exibicao['canal'] = plano_exibicao['canal'].apply(formatar_canal)
+    plano_exibicao['categoria'] = plano_exibicao['categoria'].apply(formatar_categoria)
+    plano_exibicao['funil'] = plano_exibicao['funil'].apply(formatar_funil)
+    return plano_exibicao.rename(columns=COLUNAS_PLANO_RECOMENDADO)
+
+
 def configurar_pagina() -> None:
     st.set_page_config(
         page_title='Otimizador de mix de marketing',
@@ -111,7 +211,7 @@ def configurar_pagina() -> None:
     )
     st.title('Otimizador de mix de marketing')
     st.caption(
-        'Interface Streamlit usando o backend Python do algoritmo genético com DEAP.'
+        'Otimiza mixes de marketing com base em critérios de investimento, retorno e risco, utilizando um algoritmo genético.'
     )
 
 
@@ -208,14 +308,18 @@ def renderizar_editor_canais(canais: pd.DataFrame) -> pd.DataFrame:
                 help=TOOLTIPS_COLUNAS['id'],
                 required=True,
             ),
-            'canal': st.column_config.TextColumn(
+            'canal': st.column_config.SelectboxColumn(
                 'Canal',
                 help=TOOLTIPS_COLUNAS['canal'],
+                options=montar_opcoes_canal(canais),
+                format_func=formatar_canal,
                 required=True,
             ),
-            'categoria': st.column_config.TextColumn(
+            'categoria': st.column_config.SelectboxColumn(
                 'Categoria',
                 help=TOOLTIPS_COLUNAS['categoria'],
+                options=montar_opcoes_categoria(canais),
+                format_func=formatar_categoria,
                 required=True,
             ),
             'funil': st.column_config.SelectboxColumn(
@@ -274,7 +378,7 @@ def grafico_alocacao_canal(plano: pd.DataFrame) -> go.Figure:
     figura = go.Figure(
         go.Bar(
             x=plano_ordenado['investimento_mil'],
-            y=plano_ordenado['canal'],
+            y=plano_ordenado['canal'].apply(formatar_canal),
             orientation='h',
             marker={
                 'color': plano_ordenado['lucro_bruto_mil'],
@@ -296,7 +400,8 @@ def grafico_alocacao_canal(plano: pd.DataFrame) -> go.Figure:
     )
     return figura
 
-def grafico_alocacao_categoria(plano: pd.DataFrame) -> go.Figure: # Igual ao de canal, mas agrupando por categoria
+
+def grafico_alocacao_categoria(plano: pd.DataFrame) -> go.Figure: # Igual ao de canal, mas agrupando por categoria e com gramatica correta (sem _ e com espaços no título e eixo y
     plano_agrupado = plano.groupby('categoria', as_index=False).agg({
         'investimento_mil': 'sum',
         'lucro_bruto_mil': 'sum',
@@ -305,7 +410,7 @@ def grafico_alocacao_categoria(plano: pd.DataFrame) -> go.Figure: # Igual ao de 
     figura = go.Figure(
         go.Bar(
             x=plano_ordenado['investimento_mil'],
-            y=plano_ordenado['categoria'],
+            y=plano_ordenado['categoria'].apply(formatar_categoria),
             orientation='h',
             marker={
                 'color': plano_ordenado['lucro_bruto_mil'],
@@ -326,6 +431,7 @@ def grafico_alocacao_categoria(plano: pd.DataFrame) -> go.Figure: # Igual ao de 
         height=430,
     )
     return figura
+
 
 def grafico_alocacao_funil(plano: pd.DataFrame) -> go.Figure: # Igual ao do por canal, mas agrupando por funil e ordenando pelo investimento
     plano_agrupado = plano.groupby('funil', as_index=False).agg({
@@ -357,6 +463,7 @@ def grafico_alocacao_funil(plano: pd.DataFrame) -> go.Figure: # Igual ao do por 
         height=430,
     )
     return figura
+
 
 def grafico_fronteira(fronteira: pd.DataFrame, lucro: float, risco: float) -> go.Figure:
     figura = px.scatter(
@@ -433,7 +540,32 @@ def renderizar_resultado(resultado) -> None:
     colunas[3].metric('Sinergia', f'R$ {metricas.sinergia_mil:.1f} mil')
 
     st.subheader('Plano recomendado')
-    st.dataframe(resultado.plano_detalhado, use_container_width=True, hide_index=True)
+    plano_recomendado = preparar_plano_recomendado_para_exibicao(
+        resultado.plano_detalhado
+    )
+    st.dataframe(
+        plano_recomendado,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            'Investimento (R$ mil)': st.column_config.NumberColumn(
+                'Investimento (R$ mil)',
+                format='R$ %.0f mil',
+            ),
+            'Receita estimada (R$ mil)': st.column_config.NumberColumn(
+                'Receita estimada (R$ mil)',
+                format='R$ %.2f mil',
+            ),
+            'Lucro bruto (R$ mil)': st.column_config.NumberColumn(
+                'Lucro bruto (R$ mil)',
+                format='R$ %.2f mil',
+            ),
+            'Risco ponderado (R$ mil)': st.column_config.NumberColumn(
+                'Risco ponderado (R$ mil)',
+                format='R$ %.2f mil',
+            ),
+        },
+    )
 
     csv = resultado.plano_detalhado.to_csv(index=False).encode('utf-8')
     xlsx = gerar_excel_plano(resultado.plano_detalhado)

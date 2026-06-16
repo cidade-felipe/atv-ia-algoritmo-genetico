@@ -863,7 +863,7 @@ tres blocos iguais. Como cada botao ficava no inicio de uma coluna grande, o
 botao de Excel aparecia distante do botao de CSV.
 
 A correcao alterou o layout para colunas proporcionais menores no inicio da
-linha, usando `st.columns([0.24, 0.27, 0.49], gap='small')`, e aplicou
+linha, usando `st.columns([0.26, 0.27, 0.49], gap='small')`, e aplicou
 `use_container_width=True` nos dois botoes. Assim, os botoes ficam lado a lado,
 com pouco espaco entre eles, e a area restante fica como respiro a direita.
 
@@ -871,3 +871,110 @@ Opiniao tecnica: essa abordagem e mais simples e sustentavel do que usar CSS
 customizado para esse caso. O proprio Streamlit continua controlando a
 responsividade, enquanto o layout fica visualmente mais proximo do que se espera
 em botoes relacionados.
+
+## Categorias formatadas no Streamlit em 16_06_2026
+
+Foram analisadas novas alteracoes feitas no editor de canais da interface
+Streamlit.
+
+Fato: a coluna `categoria` deixou de ser um campo de texto livre simples e passou
+a usar `st.column_config.SelectboxColumn`.
+
+Fato: foram adicionados mapas de rotulos para exibir categorias com escrita mais
+amigavel na interface:
+
+- `midia_paga` aparece como `Mídia paga`;
+- `relacionamento` aparece como `Relacionamento`;
+- `organico` aparece como `Orgânico`;
+- `marca` aparece como `Marca`;
+- `produto` aparece como `Produto`;
+- `b2b` aparece como `B2B`;
+- `trade` aparece como `Trade`.
+
+A funcao `montar_opcoes_categoria` monta as opcoes do selectbox usando as
+categorias conhecidas e tambem qualquer categoria nova que exista na tabela
+editada. Isso evita perder valores caso a pessoa adicione uma categoria que ainda
+nao esta no mapa fixo.
+
+A funcao `formatar_categoria` cuida da exibicao visual. O valor interno continua
+podendo ser `midia_paga`, mas a pessoa ve `Mídia paga` na tela.
+
+A funcao `normalizar_canais` tambem passou a converter rotulos visuais de volta
+para os identificadores internos antes de validar e executar o algoritmo. Por
+exemplo, se a interface devolver `Mídia paga`, o codigo normaliza para
+`midia_paga`.
+
+Inferencia: essa mudanca foi feita para melhorar a qualidade visual da tabela e
+reduzir erros de digitacao em categorias, sem alterar o CSV default
+`data/canais_marketing.csv`.
+
+Opiniao tecnica: manter o CSV com valores internos simples e fazer a traducao na
+interface e uma boa decisao. Isso preserva compatibilidade com o motor do
+algoritmo genetico, melhora a experiencia de uso e evita que detalhes de
+apresentacao vazem para os dados base.
+
+## Canais formatados no Streamlit em 16_06_2026
+
+Foram analisadas novas alteracoes feitas no editor de canais da interface
+Streamlit.
+
+Fato: a coluna `canal` tambem deixou de ser apenas um campo de texto livre e
+passou a usar `st.column_config.SelectboxColumn`.
+
+Fato: foi adicionado o dicionario `CANAL_ROTULOS`, que traduz nomes internos ou
+sem acentuacao para rotulos mais apresentaveis na interface. Exemplos:
+
+- `Otimizacao de conversao` aparece como `Otimização de conversão`;
+- `Programa de indicacao` aparece como `Programa de indicação`;
+- `Conteudo SEO` aparece como `Conteúdo SEO`;
+- `CRM e email` aparece como `CRM e Email`;
+- `Promocoes marketplace` aparece como `Promoções marketplace`.
+
+Tambem foram adicionadas as funcoes:
+
+- `montar_opcoes_canal`, que monta as opcoes do selectbox a partir dos canais
+  conhecidos e dos canais existentes na tabela editada;
+- `formatar_canal`, que controla a exibicao visual do nome do canal;
+- a normalizacao em `normalizar_canais`, que converte rotulos visuais de volta
+  para os valores internos antes da validacao e da execucao do algoritmo.
+
+Fato: essa mudanca segue o mesmo padrao ja usado para `funil` e `categoria`.
+
+Inferencia: a intencao e manter o CSV default simples, sem precisar reescrever os
+dados base, enquanto a interface mostra textos mais corretos e agradaveis para a
+apresentacao.
+
+Opiniao tecnica: essa separacao entre valor interno e rotulo visual e saudavel.
+Ela reduz erros de digitacao, melhora a leitura da tabela e evita que ajustes de
+acentuacao ou apresentacao afetem diretamente o motor do algoritmo genetico.
+
+## Plano recomendado formatado no Streamlit em 16_06_2026
+
+Foi melhorada a exibicao da tabela `Plano recomendado` na interface Streamlit.
+
+Fato: anteriormente essa tabela exibia diretamente o `DataFrame`
+`resultado.plano_detalhado`, com nomes tecnicos de colunas como
+`investimento_mil`, `receita_estimada_mil`, `lucro_bruto_mil` e
+`risco_ponderado_mil`.
+
+Fato: foi adicionada a funcao `preparar_plano_recomendado_para_exibicao`, que
+cria uma copia do plano apenas para apresentacao visual.
+
+A exibicao agora aplica:
+
+- `formatar_canal` na coluna de canal;
+- `formatar_categoria` na coluna de categoria;
+- `formatar_funil` na coluna de funil;
+- renomeacao das colunas para rotulos amigaveis, como `Investimento (R$ mil)`,
+  `Receita estimada (R$ mil)`, `Lucro bruto (R$ mil)` e
+  `Risco ponderado (R$ mil)`;
+- `st.column_config.NumberColumn` para mostrar os valores monetarios com
+  prefixo `R$` e unidade `mil`.
+
+Fato: essa formatacao afeta apenas a tabela exibida na tela. Os downloads em CSV
+e XLSX continuam usando `resultado.plano_detalhado`, preservando os nomes de
+colunas tecnicos e os valores internos para reuso em analises.
+
+Opiniao tecnica: essa e a melhor separacao para este caso. A interface fica mais
+clara para apresentacao, mas os dados exportados continuam previsiveis para quem
+quiser abrir em outra ferramenta, automatizar analises ou comparar resultados.
