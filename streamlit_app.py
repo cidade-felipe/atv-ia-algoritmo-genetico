@@ -208,7 +208,7 @@ def configurar_pagina() -> None:
     st.set_page_config(
         page_title='Otimizador de mix de marketing',
         layout='wide',
-    )
+    )   
     st.title('Otimizador de mix de marketing')
     st.caption(
         'Otimiza mixes de marketing com base em critérios de investimento, retorno e risco, utilizando um algoritmo genético.'
