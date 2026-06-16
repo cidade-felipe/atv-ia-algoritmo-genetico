@@ -16,6 +16,37 @@ from src.motor_algoritmo_genetico import (
 
 RAIZ_PROJETO = Path(__file__).resolve().parent
 CAMINHO_DADOS = RAIZ_PROJETO / 'data' / 'canais_marketing.csv'
+FUNIL_ROTULOS = {
+    'aquisicao': 'Aquisição',
+    'conversao': 'Conversão',
+    'nutricao': 'Nutrição',
+    'retencao': 'Retenção',
+}
+FUNIL_VALORES_POR_ROTULO = {
+    rotulo: valor
+    for valor, rotulo in FUNIL_ROTULOS.items()
+}
+TOOLTIPS_PARAMETROS = {
+    'orcamento': 'Valor total disponível, em milhares de reais, que o algoritmo deve distribuir entre os canais.',
+    'populacao': 'Quantidade de planos candidatos avaliados em cada geração do algoritmo genético.',
+    'geracoes': 'Número de ciclos evolutivos usados para selecionar, cruzar e mutar os planos.',
+    'descendentes': 'Quantidade de novos planos criados a cada geração por cruzamento ou mutação.',
+    'crossover': 'Probabilidade de combinar dois planos para gerar novos planos candidatos.',
+    'mutacao': 'Probabilidade de redistribuir parte da verba para explorar alternativas novas.',
+    'peso_risco': 'Intensidade com que o risco reduz o score usado para escolher o plano recomendado.',
+    'semente': 'Número usado para repetir a mesma sequência aleatória e reproduzir o resultado.',
+}
+TOOLTIPS_COLUNAS = {
+    'id': 'Identificador único do canal usado nas regras de sinergia e nos resultados.',
+    'canal': 'Nome visível do canal de marketing que receberá investimento.',
+    'categoria': 'Grupo estratégico do canal, como mídia paga, orgânico, relacionamento ou produto.',
+    'funil': 'Etapa do funil onde o canal atua principalmente, como aquisição, conversão, nutrição ou retenção.',
+    'investimento_min_mil': 'Menor investimento permitido no canal, em milhares de reais.',
+    'investimento_max_mil': 'Maior investimento permitido no canal antes de violar a capacidade definida.',
+    'receita_por_mil': 'Receita estimada gerada por cada R$ 1 mil investido antes da saturação.',
+    'saturacao': 'Quanto o retorno marginal do canal cai quando o investimento se aproxima do máximo.',
+    'risco': 'Incerteza relativa do canal, usada para penalizar planos muito arriscados.',
+}
 
 
 def carregar_canais_padrao() -> pd.DataFrame:
@@ -27,7 +58,12 @@ def normalizar_canais(canais: pd.DataFrame) -> pd.DataFrame:
     canais['id'] = canais['id'].astype(str).str.strip().str.upper().str.replace(' ', '_')
     canais['canal'] = canais['canal'].astype(str).str.strip()
     canais['categoria'] = canais['categoria'].astype(str).str.strip()
-    canais['funil'] = canais['funil'].astype(str).str.strip()
+    canais['funil'] = (
+        canais['funil']
+        .astype(str)
+        .str.strip()
+        .replace(FUNIL_VALORES_POR_ROTULO)
+    )
 
     for coluna in [
         'investimento_min_mil',
@@ -41,6 +77,23 @@ def normalizar_canais(canais: pd.DataFrame) -> pd.DataFrame:
     canais['investimento_min_mil'] = canais['investimento_min_mil'].round().astype('Int64')
     canais['investimento_max_mil'] = canais['investimento_max_mil'].round().astype('Int64')
     return canais
+
+
+def montar_opcoes_funil(canais: pd.DataFrame) -> list[str]:
+    funis_csv = [
+        str(valor).strip()
+        for valor in canais['funil'].dropna().unique()
+        if str(valor).strip()
+    ]
+    return list(dict.fromkeys([*FUNIL_ROTULOS, *funis_csv]))
+
+
+def formatar_funil(valor: str) -> str:
+    valor_normalizado = str(valor).strip()
+    return FUNIL_ROTULOS.get(
+        valor_normalizado,
+        valor_normalizado.replace('_', ' ').title(),
+    )
 
 
 def configurar_pagina() -> None:
@@ -62,6 +115,7 @@ def renderizar_parametros() -> ConfigMarketingAG:
         max_value=10_000,
         value=100,
         step=1,
+        help=TOOLTIPS_PARAMETROS['orcamento'],
     )
     populacao = st.sidebar.number_input(
         'População',
@@ -69,6 +123,7 @@ def renderizar_parametros() -> ConfigMarketingAG:
         max_value=500,
         value=140,
         step=10,
+        help=TOOLTIPS_PARAMETROS['populacao'],
     )
     geracoes = st.sidebar.number_input(
         'Gerações',
@@ -76,6 +131,7 @@ def renderizar_parametros() -> ConfigMarketingAG:
         max_value=300,
         value=110,
         step=5,
+        help=TOOLTIPS_PARAMETROS['geracoes'],
     )
     descendentes = st.sidebar.number_input(
         'Descendentes por geração',
@@ -83,17 +139,38 @@ def renderizar_parametros() -> ConfigMarketingAG:
         max_value=500,
         value=140,
         step=10,
+        help=TOOLTIPS_PARAMETROS['descendentes'],
     )
-    crossover = st.sidebar.slider('Taxa de crossover', 0.0, 1.0, 0.68, 0.01)
-    mutacao = st.sidebar.slider('Taxa de mutação', 0.0, 1.0, 0.32, 0.01)
+    crossover = st.sidebar.slider(
+        'Taxa de crossover',
+        0.0,
+        1.0,
+        0.68,
+        0.01,
+        help=TOOLTIPS_PARAMETROS['crossover'],
+    )
+    mutacao = st.sidebar.slider(
+        'Taxa de mutação',
+        0.0,
+        1.0,
+        0.32,
+        0.01,
+        help=TOOLTIPS_PARAMETROS['mutacao'],
+    )
     peso_risco = st.sidebar.number_input(
         'Peso do risco',
         min_value=0.0,
         max_value=10.0,
         value=0.55,
         step=0.05,
+        help=TOOLTIPS_PARAMETROS['peso_risco'],
     )
-    semente = st.sidebar.number_input('Semente aleatória', value=42, step=1)
+    semente = st.sidebar.number_input(
+        'Semente aleatória',
+        value=42,
+        step=1,
+        help=TOOLTIPS_PARAMETROS['semente'],
+    )
 
     return ConfigMarketingAG(
         orcamento_mil=int(orcamento),
@@ -118,28 +195,45 @@ def renderizar_editor_canais(canais: pd.DataFrame) -> pd.DataFrame:
         use_container_width=True,
         hide_index=True,
         column_config={
-            'id': st.column_config.TextColumn('ID', required=True),
-            'canal': st.column_config.TextColumn('Canal', required=True),
-            'categoria': st.column_config.TextColumn('Categoria', required=True),
+            'id': st.column_config.TextColumn(
+                'ID',
+                help=TOOLTIPS_COLUNAS['id'],
+                required=True,
+            ),
+            'canal': st.column_config.TextColumn(
+                'Canal',
+                help=TOOLTIPS_COLUNAS['canal'],
+                required=True,
+            ),
+            'categoria': st.column_config.TextColumn(
+                'Categoria',
+                help=TOOLTIPS_COLUNAS['categoria'],
+                required=True,
+            ),
             'funil': st.column_config.SelectboxColumn(
                 'Funil',
-                options=['aquisição', 'conversão', 'nutrição', 'retenção'],
+                help=TOOLTIPS_COLUNAS['funil'],
+                options=montar_opcoes_funil(canais),
+                format_func=formatar_funil,
                 required=True,
             ),
             'investimento_min_mil': st.column_config.NumberColumn(
-                'Mínimo',
+                'Mínimo (R$ mil)',
+                help=TOOLTIPS_COLUNAS['investimento_min_mil'],
                 min_value=0,
                 step=1,
                 required=True,
             ),
             'investimento_max_mil': st.column_config.NumberColumn(
-                'Máximo',
+                'Máximo (R$ mil)',
+                help=TOOLTIPS_COLUNAS['investimento_max_mil'],
                 min_value=0,
                 step=1,
                 required=True,
             ),
             'receita_por_mil': st.column_config.NumberColumn(
                 'Receita por R$ mil',
+                help=TOOLTIPS_COLUNAS['receita_por_mil'],
                 min_value=0.01,
                 step=0.05,
                 format='%.2f',
@@ -147,6 +241,7 @@ def renderizar_editor_canais(canais: pd.DataFrame) -> pd.DataFrame:
             ),
             'saturacao': st.column_config.NumberColumn(
                 'Saturação',
+                help=TOOLTIPS_COLUNAS['saturacao'],
                 min_value=0.0,
                 max_value=1.0,
                 step=0.01,
@@ -155,6 +250,7 @@ def renderizar_editor_canais(canais: pd.DataFrame) -> pd.DataFrame:
             ),
             'risco': st.column_config.NumberColumn(
                 'Risco',
+                help=TOOLTIPS_COLUNAS['risco'],
                 min_value=0.0,
                 max_value=1.0,
                 step=0.01,
@@ -309,7 +405,7 @@ def main() -> None:
         try:
             canais = normalizar_canais(canais_editados)
             validar_canais(canais)
-            with st.spinner('Executando algoritmo genético...'):
+            with st.spinner('Calculando plano otimizado...'):
                 resultado = executar_algoritmo_genetico(canais, config)
             st.success('Cálculo finalizado com sucesso.')
             renderizar_resultado(resultado)

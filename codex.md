@@ -740,3 +740,69 @@ sem misturar detalhes de HTML, CSS, JavaScript ou Plotly.
 Opiniao tecnica: essa e a melhor estrutura para evoluir o projeto. Ela reduz
 risco de regressao, deixa a API e o Streamlit consumindo a mesma fonte de regra
 e permite trocar a camada de apresentacao sem reescrever o algoritmo genetico.
+
+## Correcao do funil no Streamlit em 16_06_2026
+
+Foi corrigida a exibicao da coluna `funil` no editor de canais do Streamlit.
+
+Fato: o arquivo `data/canais_marketing.csv` usa valores sem acento na coluna
+`funil`, como `aquisicao`, `conversao`, `nutricao` e `retencao`.
+
+Fato: a interface Streamlit estava configurando essa coluna como
+`SelectboxColumn` com opcoes acentuadas, como `aquisição`, `conversão`,
+`nutrição` e `retenção`. Como os valores do CSV nao batiam exatamente com as
+opcoes do selectbox, o Streamlit mostrava a coluna vazia no carregamento
+inicial.
+
+A correcao manteve os valores internos iguais aos do CSV e adicionou uma funcao
+de formatacao visual:
+
+- internamente, o DataFrame continua usando `aquisicao`, `conversao`,
+  `nutricao` e `retencao`;
+- visualmente, o usuario ve `Aquisição`, `Conversão`, `Nutrição` e `Retenção`;
+- se o CSV trouxer algum funil novo, ele tambem entra nas opcoes da coluna para
+  evitar perda visual de dados.
+
+Opiniao tecnica: essa solucao e melhor do que alterar diretamente o CSV, porque
+preserva compatibilidade com o motor do algoritmo genetico e resolve o problema
+na camada correta, que e a camada de apresentacao.
+
+## Tooltips da interface Streamlit em 16_06_2026
+
+Foram adicionados tooltips curtos na interface Streamlit para explicar os campos
+destacados na tela.
+
+Campos da barra lateral que receberam explicacao:
+
+- `Orçamento (R$ mil)`: explica que e o valor total distribuido entre os canais.
+- `População`: explica que e a quantidade de planos candidatos avaliados por
+  geracao.
+- `Gerações`: explica que e a quantidade de ciclos evolutivos.
+- `Descendentes por geração`: explica quantos novos planos sao criados em cada
+  ciclo.
+- `Taxa de crossover`: explica a probabilidade de combinar dois planos.
+- `Taxa de mutação`: explica a probabilidade de redistribuir verba para explorar
+  alternativas.
+- `Peso do risco`: explica quanto o risco pesa na escolha final do plano
+  recomendado.
+- `Semente aleatória`: explica que permite reproduzir a mesma sequencia
+  aleatoria.
+
+Colunas da tabela que receberam explicacao:
+
+- `ID`;
+- `Canal`;
+- `Categoria`;
+- `Funil`;
+- `Mínimo`;
+- `Máximo`;
+- `Receita por R$ mil`;
+- `Saturação`;
+- `Risco`.
+
+Fato: no Streamlit, os tooltips foram implementados pelo parametro `help` dos
+widgets e das configuracoes de coluna do `st.data_editor`.
+
+Opiniao tecnica: essa melhoria reduz friccao para quem esta usando a interface
+pela primeira vez e ajuda a conectar cada parametro visual ao comportamento do
+algoritmo genetico.
