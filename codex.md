@@ -1150,3 +1150,133 @@ Inferencia: essa mudanca foi feita porque, na apresentacao, o avaliador pode
 perguntar diretamente onde esta o fitness. Agora o material responde isso de
 forma objetiva, com caminho do arquivo, nome da funcao e interpretacao dos
 objetivos.
+
+## Docstrings no motor genetico em 17_06_2026
+
+Foram adicionadas docstrings em todas as funcoes de:
+
+```text
+src/motor_algoritmo_genetico.py
+```
+
+Fato: as docstrings foram escritas em portugues e mantidas curtas, mas com
+conteudo suficiente para explicar a responsabilidade real de cada funcao.
+
+As docstrings cobrem:
+
+- carregamento e validacao da base de canais;
+- validacao de orcamento;
+- preparacao das classes da DEAP;
+- geracao e reparo de alocacoes;
+- calculo de receita, sinergia, lucro e risco;
+- funcao de fitness `avaliar_individuo`;
+- operadores geneticos de crossover e mutacao;
+- criacao da toolbox;
+- registro de historico;
+- execucao completa do algoritmo genetico;
+- escolha do plano recomendado;
+- montagem da fronteira de Pareto, plano detalhado e alocacao de referencia.
+
+Inferencia: essa mudanca facilita a leitura do codigo durante a apresentacao,
+principalmente se for necessario apontar rapidamente onde cada parte do algoritmo
+esta implementada.
+
+Opiniao tecnica: as docstrings foram mantidas objetivas para nao duplicar a
+documentacao detalhada em `documents/presentation/`. O arquivo Python agora
+explica a intencao de cada funcao, enquanto os Markdown continuam sendo o
+material mais completo de defesa do projeto.
+
+## Docstrings expandidas no motor genetico em 17_06_2026
+
+As docstrings de `src/motor_algoritmo_genetico.py` foram revisadas para ficarem
+mais detalhadas.
+
+Fato: alem das funcoes, as dataclasses `ConfigMarketingAG`, `MetricasPlano` e
+`ResultadoMarketingAG` tambem receberam docstrings explicando seu papel no
+motor.
+
+Fato: as docstrings agora explicam com mais contexto:
+
+- o papel de cada funcao dentro da otimizacao;
+- a relacao entre alocacao, receita, saturacao, sinergia, lucro e risco;
+- por que o fitness retorna lucro e risco;
+- como crossover e mutacao mantem viabilidade com reparo;
+- como a toolbox da DEAP registra os operadores;
+- como NSGA-II e fronteira de Pareto entram no fluxo;
+- como o plano recomendado e escolhido a partir do score de decisao.
+
+Inferencia: essa mudanca atende melhor ao objetivo de apresentacao e defesa do
+trabalho, porque o proprio codigo agora explica melhor o raciocinio do algoritmo
+sem depender exclusivamente dos arquivos Markdown.
+
+Opiniao tecnica: o nivel atual e um bom equilibrio. As docstrings ficaram mais
+informativas, mas ainda nao substituem a documentacao longa em
+`documents/presentation/`, que continua sendo o material principal de estudo.
+
+## Roteiro de apresentacao do codigo em 17_06_2026
+
+Foi criado o arquivo:
+
+```text
+documents/presentation/roteiro_apresentacao_codigo.md
+```
+
+Fato: o roteiro foi pensado para uma apresentacao sem slides, com o usuario
+abrindo diretamente os arquivos do projeto e explicando o codigo.
+
+O roteiro cobre:
+
+- abertura com o problema de alocacao de orcamento de marketing;
+- explicacao do CSV de entrada;
+- separacao entre `streamlit_app.py` e `src/motor_algoritmo_genetico.py`;
+- fluxo principal da interface Streamlit;
+- normalizacao dos dados antes do calculo;
+- representacao genetica do problema, com gene, individuo e populacao;
+- funcao de fitness em `avaliar_individuo`;
+- calculo de receita, saturacao, sinergia, lucro e risco;
+- crossover, mutacao e reparo de individuos;
+- toolbox da DEAP e selecao NSGA-II;
+- fronteira de Pareto e escolha do plano recomendado;
+- fechamento, perguntas provaveis e uma versao curta de 2 minutos.
+
+Inferencia: o material foi escrito para ser facil de decorar e acompanhar
+durante a apresentacao, evitando depender de slides.
+
+Opiniao tecnica: esse roteiro complementa bem os documentos de funcoes. Ele nao
+substitui a documentacao tecnica, mas organiza uma narrativa de defesa do
+projeto, mostrando primeiro o problema, depois a arquitetura e por fim o
+algoritmo genetico.
+
+## Roteiro ajustado para explicar funcoes em 17_06_2026
+
+O arquivo abaixo foi reescrito para ficar focado em explicacao de funcoes:
+
+```text
+documents/presentation/roteiro_apresentacao_codigo.md
+```
+
+Fato: a versao anterior estava mais parecida com uma narrativa geral do projeto.
+O usuario esclareceu que o roteiro deveria servir para explicar as funcoes do
+codigo.
+
+Fato: a nova versao organiza a apresentacao em duas partes:
+
+- funcoes e classes de `src/motor_algoritmo_genetico.py`;
+- funcoes de `streamlit_app.py`.
+
+O roteiro agora traz, para cada funcao principal:
+
+- onde abrir no codigo;
+- fala principal;
+- por que a funcao existe;
+- conexao com algoritmo genetico, interface ou resultado.
+
+Tambem foram adicionadas:
+
+- sequencia curta para apresentar sem se perder;
+- versao de fala em 2 minutos;
+- perguntas rapidas sobre fitness, pesos do DEAP, evolucao, crossover, mutacao e
+  chamada do motor pelo Streamlit.
+
+Inferencia: a nova estrutura e mais adequada para uma apresentacao em que o
+usuario vai abrir o codigo e explicar diretamente as funcoes, sem slides.

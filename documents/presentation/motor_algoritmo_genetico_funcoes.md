@@ -198,7 +198,7 @@ Regra:
 - o orçamento não pode ser menor que a soma dos investimentos mínimos;
 - o orçamento não pode ser maior que a soma dos investimentos máximos.
 
-Impacto prático: impede otimizações impossíveis. Por exemplo, se todos os mínimos somam R$ 80 mil, não dá para otimizar com orçamento de R$ 50 mil.
+Impacto prático: impede otimizações impossíveis. Por exemplo, se todos os mínimos somam R\$ 80 mil, não dá para otimizar com orçamento de R$ 50 mil.
 
 ## Funções de criação e reparo dos indivíduos
 

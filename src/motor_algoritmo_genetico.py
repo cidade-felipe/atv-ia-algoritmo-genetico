@@ -9,7 +9,6 @@ from typing import Sequence
 import pandas as pd
 from deap import algorithms, base, creator, tools
 
-
 COLUNAS_OBRIGATORIAS = {
     'id',
     'canal',
@@ -22,7 +21,7 @@ COLUNAS_OBRIGATORIAS = {
     'risco',
 }
 
-SINERGIAS = {
+SINERGIAS = {   # percentual de receita adicional para pares de canais complementares
     ('SEARCH', 'SEO'): 0.08,
     ('RETARGET', 'CRM'): 0.07,
     ('REFERRAL', 'CRO'): 0.09,
@@ -34,18 +33,30 @@ SINERGIAS = {
 
 @dataclass(frozen=True)
 class ConfigMarketingAG:
+    '''Parametros que controlam a execucao do algoritmo genetico.
+
+    Reune o orcamento, o tamanho da busca evolutiva, as probabilidades dos
+    operadores geneticos e o peso usado para penalizar risco na decisao final.
+    '''
+
     orcamento_mil: int = 100
-    tamanho_populacao: int = 140
-    geracoes: int = 110
-    descendentes_por_geracao: int = 140
-    taxa_crossover: float = 0.68
-    taxa_mutacao: float = 0.32
-    peso_risco_decisao: float = 0.55
-    semente: int = 42
+    tamanho_populacao: int = 140 # Quanto mais, mais chance de achar bons planos, mas demora mais para rodar
+    geracoes: int = 110 # Quanto mais, mais chance de convergir para bons planos, mas demora mais para rodar
+    descendentes_por_geracao: int = 140 # Quanto mais, mais chance de achar bons planos, mas demora mais para rodar
+    taxa_crossover: float = 0.68 # Quanto mais, mais mistura entre planos, mas pode perder boas caracteristicas
+    taxa_mutacao: float = 0.32 # Quanto mais, mais variacao nos descendentes, mas pode levar a solucoes suboptimas
+    peso_risco_decisao: float = 0.55 # Quanto mais, mais aversao a risco na escolha do plano recomendado, mas pode deixar de recomendar planos lucrativos
+    semente: int = 42 # Para garantir reprodutibilidade dos resultados, pode ser alterada para explorar mais variacao entre execucoes
 
 
 @dataclass(frozen=True)
 class MetricasPlano:
+    '''Indicadores consolidados de uma alocacao de marketing.
+
+    Guarda valores em milhares de reais para investimento, receita, lucro,
+    risco ponderado e ganho adicional gerado pelas sinergias entre canais.
+    '''
+
     investimento_total_mil: float
     receita_estimada_mil: float
     lucro_estimado_mil: float
@@ -55,6 +66,12 @@ class MetricasPlano:
 
 @dataclass(frozen=True)
 class ResultadoMarketingAG:
+    '''Pacote de saida produzido pelo motor genetico.
+
+    Entrega o plano recomendado, suas metricas, o historico evolutivo, a
+    fronteira de Pareto, o detalhamento por canal e a configuracao usada.
+    '''
+
     plano_recomendado: tuple[int, ...]
     metricas: MetricasPlano
     historico: pd.DataFrame
@@ -64,6 +81,12 @@ class ResultadoMarketingAG:
 
 
 def carregar_canais(caminho_csv: str | Path) -> pd.DataFrame:
+    '''Carrega e prepara a base de canais usada pela otimizacao.
+
+    Valida a existencia do arquivo, aplica as regras de qualidade em
+    `validar_canais` e converte colunas textuais e numericas para tipos
+    previsiveis antes de devolver o DataFrame.
+    '''
     caminho = Path(caminho_csv)
     if not caminho.exists():
         raise FileNotFoundError(f'Arquivo de canais nao encontrado: {caminho}')
@@ -93,6 +116,12 @@ def carregar_canais(caminho_csv: str | Path) -> pd.DataFrame:
 
 
 def validar_canais(canais: pd.DataFrame) -> None:
+    '''Valida se a tabela de canais pode ser usada pelo algoritmo.
+
+    Confere colunas obrigatorias, base vazia, valores nulos, IDs duplicados,
+    campos numericos, limites de investimento, receita positiva, saturacao e
+    risco dentro do intervalo esperado.
+    '''
     colunas_faltantes = COLUNAS_OBRIGATORIAS.difference(canais.columns)
     if colunas_faltantes:
         raise ValueError(
@@ -142,6 +171,11 @@ def validar_canais(canais: pd.DataFrame) -> None:
 
 
 def validar_orcamento(canais: pd.DataFrame, orcamento_mil: int) -> None:
+    '''Verifica se o orcamento total gera uma alocacao viavel.
+
+    O valor precisa ser pelo menos a soma dos investimentos minimos e, ao mesmo
+    tempo, nao pode ultrapassar a soma das capacidades maximas dos canais.
+    '''
     minimo = int(canais['investimento_min_mil'].sum())
     maximo = int(canais['investimento_max_mil'].sum())
     if orcamento_mil < minimo:
@@ -155,6 +189,12 @@ def validar_orcamento(canais: pd.DataFrame, orcamento_mil: int) -> None:
 
 
 def preparar_creator_deap() -> None:
+    '''Registra no DEAP as estruturas geneticas usadas pelo motor.
+
+    Cria um fitness multiobjetivo que maximiza lucro e minimiza risco, alem do
+    tipo de individuo baseado em lista. A checagem evita erro em reruns do
+    Streamlit, pois o registro do DEAP e global.
+    '''
     if not hasattr(creator, 'FitnessMarketing'):
         creator.create('FitnessMarketing', base.Fitness, weights=(1.0, -1.0))
     if not hasattr(creator, 'IndividualMarketing'):
@@ -162,6 +202,11 @@ def preparar_creator_deap() -> None:
 
 
 def gerar_alocacao_inicial(canais: pd.DataFrame, orcamento_mil: int) -> list[int]:
+    '''Gera um individuo inicial respeitando as restricoes do problema.
+
+    A alocacao comeca nos minimos de cada canal e distribui aleatoriamente o
+    orcamento restante apenas entre canais que ainda nao atingiram seu maximo.
+    '''
     validar_orcamento(canais, orcamento_mil)
 
     minimos = canais['investimento_min_mil'].astype(int).tolist()
@@ -188,6 +233,11 @@ def reparar_alocacao(
     canais: pd.DataFrame,
     orcamento_mil: int,
 ) -> list[int]:
+    '''Corrige um individuo para voltar a ser uma alocacao valida.
+
+    Arredonda genes, prende cada investimento entre minimo e maximo e redistribui
+    unidades de verba ate a soma bater exatamente com o orcamento definido.
+    '''
     validar_orcamento(canais, orcamento_mil)
 
     minimos = canais['investimento_min_mil'].astype(int).tolist()
@@ -233,6 +283,11 @@ def calcular_receitas_por_canal(
     alocacao: Sequence[int],
     canais: pd.DataFrame,
 ) -> list[float]:
+    '''Estima a receita individual de cada canal da alocacao.
+
+    Usa o retorno esperado por R$ mil e reduz o ganho marginal conforme o canal
+    se aproxima do seu investimento maximo, simulando efeito de saturacao.
+    '''
     receitas = []
 
     for investimento, canal in zip(alocacao, canais.itertuples(index=False)):
@@ -248,6 +303,11 @@ def calcular_sinergia(
     canais: pd.DataFrame,
     receitas: Sequence[float],
 ) -> float:
+    '''Calcula o ganho adicional gerado por pares de canais complementares.
+
+    Para cada par definido em `SINERGIAS`, aplica um percentual sobre a menor
+    receita do par quando ambos os canais existem na base e recebem investimento.
+    '''
     indice_por_id = {
         str(canal.id): indice
         for indice, canal in enumerate(canais.itertuples(index=False))
@@ -271,6 +331,11 @@ def calcular_metricas_plano(
     alocacao: Sequence[int],
     canais: pd.DataFrame,
 ) -> MetricasPlano:
+    '''Transforma uma alocacao em indicadores economicos e de risco.
+
+    Calcula receita por canal, adiciona sinergias, soma investimento, estima
+    lucro e pondera o risco pelo investimento feito em cada canal.
+    '''
     receitas = calcular_receitas_por_canal(alocacao, canais)
     investimento_total = float(sum(alocacao))
     sinergia = calcular_sinergia(alocacao, canais, receitas)
@@ -293,6 +358,11 @@ def calcular_metricas_plano(
 
 
 def avaliar_individuo(individuo: Sequence[int], canais: pd.DataFrame) -> tuple[float, float]:
+    '''Calcula o fitness multiobjetivo de um plano candidato.
+
+    Retorna lucro estimado e risco ponderado. Como o DEAP foi configurado com
+    pesos `(1.0, -1.0)`, o primeiro valor e maximizado e o segundo e minimizado.
+    '''
     metricas = calcular_metricas_plano(individuo, canais)
     return metricas.lucro_estimado_mil, metricas.risco_ponderado_mil
 
@@ -303,6 +373,11 @@ def cruzamento_com_reparo(
     canais: pd.DataFrame,
     orcamento_mil: int,
 ):
+    '''Combina dois planos candidatos usando crossover de dois pontos.
+
+    Depois da troca de genes, repara os dois filhos para garantir que continuem
+    respeitando orcamento total e limites minimo e maximo por canal.
+    '''
     tools.cxTwoPoint(individuo_a, individuo_b)
     individuo_a[:] = reparar_alocacao(individuo_a, canais, orcamento_mil)
     individuo_b[:] = reparar_alocacao(individuo_b, canais, orcamento_mil)
@@ -314,6 +389,11 @@ def mutacao_redistribuir(
     canais: pd.DataFrame,
     orcamento_mil: int,
 ):
+    '''Explora novas solucoes redistribuindo verba entre canais.
+
+    A mutacao escolhe canais de origem acima do minimo e destinos abaixo do
+    maximo, movendo pequenas quantias de investimento antes de reparar o plano.
+    '''
     minimos = canais['investimento_min_mil'].astype(int).tolist()
     maximos = canais['investimento_max_mil'].astype(int).tolist()
 
@@ -356,6 +436,11 @@ def mutacao_redistribuir(
 
 
 def criar_toolbox(canais: pd.DataFrame, config: ConfigMarketingAG) -> base.Toolbox:
+    '''Monta a toolbox da DEAP com todos os operadores do problema.
+
+    Registra como criar individuos e populacoes, como avaliar fitness, como
+    cruzar, como mutar e como selecionar a proxima geracao com NSGA-II.
+    '''
     preparar_creator_deap()
     toolbox = base.Toolbox()
     toolbox.register(
@@ -383,6 +468,11 @@ def criar_toolbox(canais: pd.DataFrame, config: ConfigMarketingAG) -> base.Toolb
 
 
 def registrar_historico(geracao: int, populacao: Sequence) -> dict[str, float | int]:
+    '''Resume o desempenho de uma geracao da populacao.
+
+    Extrai lucro maximo, lucro medio, risco minimo e risco medio a partir dos
+    valores de fitness ja calculados para cada individuo.
+    '''
     lucros = [individuo.fitness.values[0] for individuo in populacao]
     riscos = [individuo.fitness.values[1] for individuo in populacao]
     return {
@@ -398,6 +488,12 @@ def executar_algoritmo_genetico(
     canais: pd.DataFrame,
     config: ConfigMarketingAG | None = None,
 ) -> ResultadoMarketingAG:
+    '''Executa a otimizacao genetica completa para o mix de marketing.
+
+    Cria a populacao inicial, avalia fitness, gera descendentes com crossover e
+    mutacao, aplica selecao NSGA-II, atualiza a fronteira de Pareto e monta o
+    resultado final usado pela interface.
+    '''
     config = config or ConfigMarketingAG()
     validar_orcamento(canais, config.orcamento_mil)
     random.seed(config.semente)
@@ -451,6 +547,11 @@ def escolher_plano_recomendado(
     fronteira: tools.ParetoFront,
     config: ConfigMarketingAG,
 ) -> list[int]:
+    '''Seleciona uma recomendacao unica dentro da fronteira de Pareto.
+
+    Usa lucro menos risco ponderado pelo parametro `peso_risco_decisao`, gerando
+    um score pratico para escolher um plano entre varios trade-offs eficientes.
+    '''
     if not fronteira:
         raise RuntimeError('A fronteira de Pareto esta vazia.')
 
@@ -470,6 +571,11 @@ def montar_fronteira_pareto(
     config: ConfigMarketingAG,
     canais: pd.DataFrame,
 ) -> pd.DataFrame:
+    '''Converte os planos da fronteira de Pareto em um DataFrame explicavel.
+
+    Recalcula metricas de cada plano nao dominado e adiciona o `score_decisao`,
+    usado para ordenar alternativas e alimentar o grafico da interface.
+    '''
     linhas = []
 
     for indice, individuo in enumerate(fronteira, start=1):
@@ -492,6 +598,11 @@ def montar_fronteira_pareto(
 
 
 def montar_plano_detalhado(alocacao: Sequence[int], canais: pd.DataFrame) -> pd.DataFrame:
+    '''Gera o detalhamento por canal do plano recomendado.
+
+    Combina investimentos, receitas estimadas, lucro bruto e risco ponderado em
+    uma tabela ordenada por investimento para exibicao e exportacao.
+    '''
     receitas = calcular_receitas_por_canal(alocacao, canais)
     linhas = []
 
@@ -518,6 +629,11 @@ def montar_plano_detalhado(alocacao: Sequence[int], canais: pd.DataFrame) -> pd.
 
 
 def criar_alocacao_referencia(canais: pd.DataFrame, orcamento_mil: int) -> list[int]:
+    '''Cria uma alocacao baseline sem aleatoriedade.
+
+    Parte dos investimentos minimos e distribui o restante em rodizio entre os
+    canais com capacidade, servindo como referencia simples para comparacoes.
+    '''
     alocacao = canais['investimento_min_mil'].astype(int).tolist()
     maximos = canais['investimento_max_mil'].astype(int).tolist()
     restante = orcamento_mil - sum(alocacao)
