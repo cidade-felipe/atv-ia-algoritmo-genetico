@@ -1051,3 +1051,102 @@ Opiniao tecnica: combinar `st.session_state` com `on_click='ignore'` e a solucao
 mais robusta aqui. O download deixa de apagar visualmente o resultado e, mesmo
 quando algum rerun acontecer por outro motivo, o ultimo plano calculado continua
 disponivel ate a pessoa clicar em `Novo cenário`.
+
+## Documentacao das funcoes do app Streamlit em 17_06_2026
+
+Foi criado o arquivo:
+
+```text
+docs/streamlit_app_funcoes.md
+```
+
+Fato: o documento explica todas as funcoes definidas em `streamlit_app.py`, que
+e o arquivo responsavel pela interface Streamlit do MixGen.
+
+O documento cobre:
+
+- constantes e estruturas auxiliares usadas pelo app;
+- fluxo geral da aplicacao, desde carregamento do CSV ate renderizacao dos
+  resultados;
+- funcoes de carregamento e normalizacao dos dados;
+- funcoes de montagem de opcoes e formatacao de rotulos;
+- funcoes de exportacao;
+- funcoes de layout e entrada do usuario;
+- funcoes de graficos em Plotly;
+- funcao `renderizar_resultado`;
+- funcao `main`;
+- relacao entre o app Streamlit e o motor em `src/motor_algoritmo_genetico.py`.
+
+Inferencia: essa documentacao foi criada para servir como apoio de explicacao do
+projeto, principalmente separando o que e responsabilidade da interface e o que
+e responsabilidade do motor do algoritmo genetico.
+
+Opiniao tecnica: documentar o `streamlit_app.py` separadamente ajuda a defender a
+arquitetura do projeto. A interface fica descrita como camada de entrada,
+visualizacao e exportacao, enquanto a logica central de fitness, populacao,
+sinergias, crossover e mutacao continua concentrada no motor do algoritmo.
+
+## Documentacao das funcoes do motor genetico em 17_06_2026
+
+Foi criado o arquivo:
+
+```text
+documents/presentation/motor_algoritmo_genetico_funcoes.md
+```
+
+Fato: o usuario moveu a documentacao anterior de funcoes do Streamlit para
+`documents/presentation/streamlit_app_funcoes.md`, entao a nova documentacao foi
+criada na mesma pasta para manter o material de apresentacao organizado.
+
+Fato: o novo documento explica `src/motor_algoritmo_genetico.py`, incluindo:
+
+- constantes `COLUNAS_OBRIGATORIAS` e `SINERGIAS`;
+- dataclasses `ConfigMarketingAG`, `MetricasPlano` e `ResultadoMarketingAG`;
+- todas as funcoes de carregamento, validacao, criacao de individuos, reparo,
+  calculo de metricas, fitness, crossover, mutacao, toolbox DEAP, historico,
+  execucao do algoritmo, escolha do plano recomendado e montagem das tabelas de
+  saida;
+- representacao genetica do problema, explicando gene, individuo, populacao,
+  fitness, crossover, mutacao, reparo, selecao, NSGA-II e fronteira de Pareto;
+- explicacao curta para apresentacao;
+- cuidados e limitacoes relacionados a premissas de receita, saturacao, risco e
+  sinergia.
+
+Inferencia: esse arquivo serve como apoio direto para explicar a parte principal
+do trabalho, especialmente fitness, sinergias, populacoes, operadores geneticos e
+trade-off entre lucro e risco.
+
+Opiniao tecnica: a documentacao do motor e a peca mais importante para defender
+o projeto como algoritmo genetico de verdade. Ela mostra que o MixGen nao e
+apenas uma interface bonita, mas uma otimizacao multiobjetivo com restricoes de
+orcamento, reparo de individuos e selecao por Pareto.
+
+## Destaque da funcao de fitness em 17_06_2026
+
+Foi atualizada a documentacao:
+
+```text
+documents/presentation/motor_algoritmo_genetico_funcoes.md
+```
+
+Fato: foi adicionada uma secao especifica chamada `Onde fica a função de
+fitness`.
+
+Fato: a documentacao agora aponta explicitamente que o fitness do algoritmo esta
+em `src/motor_algoritmo_genetico.py`, na funcao `avaliar_individuo`, atualmente
+perto da linha 295.
+
+Tambem foi explicado que:
+
+- `avaliar_individuo` retorna `(lucro_estimado_mil, risco_ponderado_mil)`;
+- o lucro e maximizado e o risco e minimizado;
+- essa direcao vem de `creator.create('FitnessMarketing', base.Fitness,
+  weights=(1.0, -1.0))`;
+- o calculo dos componentes do fitness e feito por `calcular_metricas_plano`;
+- `calcular_metricas_plano` usa receita com saturacao, sinergia, risco ponderado
+  e lucro.
+
+Inferencia: essa mudanca foi feita porque, na apresentacao, o avaliador pode
+perguntar diretamente onde esta o fitness. Agora o material responde isso de
+forma objetiva, com caminho do arquivo, nome da funcao e interpretacao dos
+objetivos.
